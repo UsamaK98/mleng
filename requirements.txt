@@ -1,0 +1,22 @@
+# Core packages
+pandas==2.2.0
+numpy==1.26.4
+tqdm==4.66.2
+
+# AI and embedding
+sentence-transformers==2.5.1
+torch>=2.2.0
+requests==2.31.0
+
+# Vector database
+qdrant-client==1.7.3
+
+# API and Web
+fastapi==0.111.0
+uvicorn==0.27.1
+streamlit==1.32.2
+pydantic==2.6.4
+
+# Visualization
+matplotlib==3.8.3
+plotly==5.18.0 

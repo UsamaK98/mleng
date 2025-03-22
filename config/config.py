@@ -20,7 +20,7 @@ MIN_CHUNK_SIZE = 100
 QDRANT_HOST = "localhost"
 QDRANT_PORT = 6333
 QDRANT_COLLECTION_NAME = "parliamentary_minutes"
-VECTOR_SIZE = 768
+VECTOR_SIZE = 384
 
 # Ollama settings
 OLLAMA_BASE_URL = "http://localhost:11434"
@@ -34,7 +34,7 @@ POSTGRES_USER = "postgres"
 POSTGRES_PASSWORD = "postgres"
 
 # API settings
-API_HOST = "0.0.0.0"
+API_HOST = "127.0.0.1"
 API_PORT = 8000
 API_DEBUG = True
 

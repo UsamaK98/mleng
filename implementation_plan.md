@@ -21,36 +21,36 @@ An agentic chatbot system for interacting with parliamentary meeting minutes, en
 
 ## Phase 1: Foundation
 - [x] Analyze dataset and visualizations
-- [ ] Set up project structure
-- [ ] Configure environment and dependencies
-- [ ] Implement data processing pipeline
-- [ ] Create vector database schema
-- [ ] Implement data loader for vector database
-- [ ] Create utilities for text chunking and embedding generation
-- [ ] Build initial query understanding module
+- [x] Set up project structure
+- [x] Configure environment and dependencies
+- [x] Implement data processing pipeline
+- [x] Create vector database schema
+- [x] Implement data loader for vector database
+- [x] Create utilities for text chunking and embedding generation
+- [x] Build initial query understanding module
 
 **Deliverables:**
-- Project structure with necessary modules
-- Environment configuration
-- Data processing utilities
-- Vector database configuration and initial data loading
+- [x] Project structure with necessary modules
+- [x] Environment configuration
+- [x] Data processing utilities
+- [x] Vector database configuration and initial data loading
 
 ## Phase 2: Core Functionality
-- [ ] Implement RAG pipeline
-- [ ] Configure Ollama integration
-- [ ] Create prompt templates for different query types
-- [ ] Build FastAPI endpoints
-- [ ] Implement basic query routing logic
-- [ ] Create response formatter
-- [ ] Develop basic Streamlit interface
-- [ ] Add simple query input and response display
-- [ ] Create evaluation metrics for response quality
+- [x] Implement RAG pipeline
+- [x] Configure Ollama integration
+- [x] Create prompt templates for different query types
+- [x] Build FastAPI endpoints
+- [x] Implement basic query routing logic
+- [x] Create response formatter
+- [x] Develop basic Streamlit interface
+- [x] Add simple query input and response display
+- [x] Create evaluation metrics for response quality
 
 **Deliverables:**
-- Working FastAPI backend with RAG capabilities
-- Basic Streamlit frontend for queries
-- Functional end-to-end query-response system
-- Initial evaluation metrics
+- [x] Working FastAPI backend with RAG capabilities
+- [x] Basic Streamlit frontend for queries
+- [x] Functional end-to-end query-response system
+- [x] Initial evaluation metrics
 
 ## Phase 3: Advanced Features
 - [ ] Implement hybrid search capabilities
@@ -64,10 +64,10 @@ An agentic chatbot system for interacting with parliamentary meeting minutes, en
 - [ ] Implement GPU acceleration
 
 **Deliverables:**
-- Enhanced search capabilities
-- Speaker and topic analytics features
-- Advanced UI with visualization components
-- Performance optimizations
+- [ ] Enhanced search capabilities
+- [ ] Speaker and topic analytics features
+- [ ] Advanced UI with visualization components
+- [ ] Performance optimizations
 
 ## Phase 4: Refinement
 - [ ] Collect and integrate user feedback
@@ -79,10 +79,10 @@ An agentic chatbot system for interacting with parliamentary meeting minutes, en
 - [ ] Prepare final deployment package
 
 **Deliverables:**
-- Refined response generation
-- Performance optimizations
-- Comprehensive documentation
-- Production-ready deployment package
+- [ ] Refined response generation
+- [ ] Performance optimizations
+- [ ] Comprehensive documentation
+- [ ] Production-ready deployment package
 
 ## Technology Stack
 - **Backend**: FastAPI, Python
