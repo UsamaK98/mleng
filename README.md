@@ -1,143 +1,185 @@
 # Parliamentary Minutes Agentic Chatbot
 
-An AI-powered chatbot for interacting with Scottish Parliament meeting minutes, enabling users to query by entity name, topic, or free-form questions.
+An AI-powered chatbot system for querying and analyzing Scottish Parliament meeting minutes, leveraging RAG (Retrieval-Augmented Generation) technology.
 
-## Features
+## 🔍 Overview
 
-- **Natural Language Querying**: Ask questions about parliamentary proceedings in plain English
-- **Speaker Analysis**: Search for specific speakers and view their contributions
-- **Topic Exploration**: Explore discussions on specific topics across sessions
-- **Document Citations**: All responses include citations to the source documents
-- **Interactive UI**: User-friendly interface with chat and search capabilities
+This project provides an intelligent interface to search, analyze, and extract insights from Scottish Parliament meeting minutes. The system uses a vector database to store document embeddings, allowing for semantic retrieval of relevant content when users ask questions. The main features include:
 
-## System Architecture
+- **Natural language querying** of parliamentary minutes
+- **Speaker analysis** to examine contributions by specific MPs
+- **Topic exploration** to find discussions on specific subjects
+- **Document citations** linking responses to source material
+- **Interactive UI** for easy engagement with the data
 
-The system uses a Retrieval-Augmented Generation (RAG) pipeline with the following components:
+## 🏗️ System Architecture
 
-- **Vector Database**: Qdrant for semantic search of parliamentary content
-- **Embedding Model**: Sentence transformers for generating text embeddings
-- **LLM Integration**: Local LLM deployment via Ollama
-- **API Layer**: FastAPI for backend services
-- **UI**: Streamlit for the user interface
+The system is built with a modular architecture, consisting of several key components:
 
-## Prerequisites
+- **Vector Database (Qdrant)**: Stores document embeddings for semantic search
+- **Embedding Model**: Converts text to vector embeddings using sentence-transformers
+- **LLM Integration**: Connects to Ollama for generating responses
+- **API Layer**: FastAPI backend exposes endpoints for queries
+- **UI**: Streamlit frontend for user interaction
 
-- Python 3.8+
-- Docker (for running Qdrant and Ollama)
-- GPU recommended for faster embedding generation and inference
-
-### Docker Services
-
-Make sure you have the following Docker services running:
-
-1. **Qdrant**:
-   ```bash
-   docker run -d -p 6333:6333 -p 6334:6334 -v ./qdrant_data:/qdrant/storage qdrant/qdrant
-   ```
-
-2. **Ollama** (with models):
-   ```bash
-   docker run -d -p 11434:11434 -v ollama:/root/.ollama ollama/ollama
-   ```
-
-3. Pull a model in Ollama:
-   ```bash
-   docker exec -it <ollama_container_id> ollama pull mistral
-   ```
-
-## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd parliamentary-minutes-chatbot
-   ```
-
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Ingest the data (this will process the parliamentary minutes and create embeddings):
-   ```bash
-   python run.py --ingest
-   ```
-
-## Usage
-
-### Running the Application
-
-Run the complete application (API + UI):
-```bash
-python run.py
+```
+┌───────────────────┐     ┌─────────────────────┐     ┌──────────────────┐
+│ User Interface    │     │  Retrieval System   │     │  Knowledge Base  │
+│ - Streamlit UI    │────►│  - RAG pipeline     │────►│  - Qdrant        │
+│ - Interactive UI  │     │  - Query processing │     │  - Document store│
+└───────────────────┘     └─────────────────────┘     └──────────────────┘
+         ▲                          │                          ▲
+         │                          ▼                          │
+         │                ┌─────────────────────┐             │
+         └────────────────┤ Language Model      │─────────────┘
+                          │ - Ollama (local)    │
+                          │ - Mistral model     │
+                          └─────────────────────┘
 ```
 
-This will start:
-- FastAPI server on http://localhost:8000
-- Streamlit UI on http://localhost:8501
+## 📋 Prerequisites
 
-### Running Components Separately
+- **Python 3.9+**
+- **Docker** for running Qdrant and Ollama services
+- **GPU recommended** for faster embedding generation and inference (but not required)
 
-Run only the API server:
+## 🚀 Getting Started
+
+### 1. Clone the repository
+
 ```bash
-python run.py --api-only
+git clone https://github.com/yourusername/parliamentary-minutes-chatbot.git
+cd parliamentary-minutes-chatbot
 ```
 
-Run only the UI:
+### 2. Install dependencies
+
 ```bash
-python run.py --ui-only
+pip install -r requirements.txt
 ```
 
-### API Endpoints
+### 3. Run necessary Docker services
 
-- `POST /query`: Process general queries about parliamentary minutes
-- `POST /entity`: Process queries about specific speakers
-- `POST /topic`: Process queries about specific topics
-- `GET /metadata`: Get metadata about the parliamentary dataset
+#### Qdrant Vector Database
 
-## Example Queries
+```bash
+docker run -d --name qdrant -p 6333:6333 qdrant/qdrant
+```
+
+#### Ollama (for LLM inference)
+
+```bash
+docker run -d --name ollama -p 11434:11434 ollama/ollama
+docker exec ollama ollama pull mistral
+```
+
+### 4. Data Ingestion
+
+Process the parliamentary minutes and create embeddings:
+
+```bash
+python run_app.py --ingest
+```
+
+Add `--force-recreate` if you need to rebuild the vector database:
+
+```bash
+python run_app.py --ingest --force-recreate
+```
+
+### 5. Run the Application
+
+Start both the API and UI with:
+
+```bash
+python run_app.py
+```
+
+The application will check if all dependencies are available and then:
+- Start the FastAPI backend on port 8000
+- Start the Streamlit UI on port 8501
+
+You can access the UI at http://localhost:8501 and the API at http://localhost:8000
+
+## 🔌 API Endpoints
+
+The system provides the following API endpoints:
+
+- **POST /query**: Process general queries about parliamentary minutes
+  ```json
+  {
+    "query": "What discussions took place about healthcare?",
+    "filters": {"date": "2024-06-26"}
+  }
+  ```
+
+- **POST /entity**: Process queries about specific entities (speakers)
+  ```json
+  {
+    "entity": "John Smith"
+  }
+  ```
+
+- **POST /topic**: Process queries about specific topics
+  ```json
+  {
+    "topic": "education"
+  }
+  ```
+
+- **GET /metadata**: Retrieve metadata about the parliamentary minutes dataset
+
+## 💡 Example Queries
 
 ### General Questions
-- "What did Kate Forbes say about European funding?"
-- "What were the main points discussed in the October 2024 session?"
-- "Summarize the debate about healthcare from January 2025"
+- "What was discussed in the session on January 7, 2025?"
+- "Summarize the key points from the June 26, 2024 meeting"
+- "What was the main topic of discussion in September 2024?"
 
 ### Entity Queries
-- "Kate Forbes"
-- "The Convener"
-- "Stephen Boyle"
+- "What did Jane Doe contribute to the discussion on healthcare?"
+- "How many times did John Smith speak in the October meeting?"
+- "What topics does Mary Johnson typically discuss?"
 
 ### Topic Queries
-- "European structural funds"
-- "budget"
-- "healthcare"
+- "Summarize all discussions about education in the parliament"
+- "What was said about climate change initiatives?"
+- "How did the parliament address budget concerns?"
 
-## Project Structure
+## 📂 Project Structure
 
 ```
-├── config/              # Configuration files
-├── output/              # Processed data and visualizations
-├── project-info/        # Project documentation
-│   └── data/            # Raw parliamentary minutes
-├── src/                 # Source code
-│   ├── api/             # FastAPI application
-│   ├── data/            # Data processing modules
-│   ├── database/        # Database interfaces
-│   ├── models/          # ML models
-│   ├── rag/             # RAG pipeline components
-│   ├── ui/              # Streamlit UI
-│   └── utils/           # Utility functions
-├── implementation_plan.md # Development plan
-├── README.md            # This file
-├── requirements.txt     # Python dependencies
-└── run.py               # Main runner script
+parliamentary-minutes-chatbot/
+├── config/                 # Configuration settings
+├── project-info/           
+│   └── data/               # Raw parliamentary minutes data
+├── src/
+│   ├── api/                # FastAPI backend
+│   ├── data/               # Data processing utilities
+│   ├── database/           # Vector database interface
+│   ├── models/             # LLM interface and embeddings
+│   ├── rag/                # RAG pipeline components
+│   └── ui/                 # Streamlit user interface
+├── output/                 # Processed data outputs
+├── README.md               # This file
+├── requirements.txt        # Python dependencies
+├── run.py                  # Original run script
+└── run_app.py              # Improved runner script
 ```
 
-## Next Steps and Future Improvements
+## 🔜 Future Improvements
 
-- Implement hybrid search combining dense and sparse retrievals
-- Add relationship mapping between speakers
-- Enable cross-session analysis
-- Add sentiment analysis for contributions
-- Enhance UI with more visualizations
-- Implement GPU optimization for better performance 
+- **Hybrid search implementation** combining dense and sparse retrieval
+- **Relationship mapping** between speakers and topics
+- **Cross-session analysis** to track issues over time
+- **Sentiment analysis** for contributions
+- **UI enhancements** with more visualizations
+- **GPU optimization** for faster processing
+
+## 📝 License
+
+[MIT License](LICENSE)
+
+## 🙏 Acknowledgements
+
+This project uses data from the Scottish Parliament. The system is built with open-source technologies including Qdrant, sentence-transformers, Ollama, FastAPI, and Streamlit. 

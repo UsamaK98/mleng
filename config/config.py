@@ -24,7 +24,7 @@ VECTOR_SIZE = 384
 
 # Ollama settings
 OLLAMA_BASE_URL = "http://localhost:11434"
-OLLAMA_MODEL = "mistral"  # or llama2 or other models available in Ollama
+OLLAMA_MODEL = "mistral:7b-instruct"  # Updated to use specific Ollama model tag
 
 # Database settings
 POSTGRES_HOST = "localhost"

@@ -77,7 +77,7 @@ class VectorStore:
                 field_schema=models.PayloadSchemaType.KEYWORD,
             )
     
-    def add_chunks(self, chunks: List[Dict[str, Any]]) -> List[str]:
+    def add_chunks(self, chunks: List[Dict[str, Any]]) -> List[int]:
         """
         Add chunks to the vector store
         
@@ -96,25 +96,58 @@ class VectorStore:
             point_id = i
             ids.append(point_id)
             
-            # Create the point
-            points.append(
-                models.PointStruct(
-                    id=point_id,
-                    vector=chunk["embedding"].tolist(),
-                    payload={
-                        "text": chunk["text"],
-                        "metadata": chunk["metadata"]
-                    }
+            # Ensure text is not too large (truncate if necessary)
+            text = chunk["text"]
+            if len(text) > 10000:  # Limit text size to prevent JSON issues
+                text = text[:10000] + "... [truncated]"
+            
+            # Clean metadata to ensure it's serializable
+            metadata = {}
+            for key, value in chunk["metadata"].items():
+                if isinstance(value, (str, int, float, bool, type(None))):
+                    metadata[key] = value
+                else:
+                    # Convert non-primitive types to string
+                    metadata[key] = str(value)
+            
+            # Create the point with properly sanitized data
+            try:
+                # Convert numpy array to list
+                vector = chunk["embedding"].tolist() if hasattr(chunk["embedding"], "tolist") else chunk["embedding"]
+                
+                points.append(
+                    models.PointStruct(
+                        id=point_id,
+                        vector=vector,
+                        payload={
+                            "text": text,
+                            "metadata": metadata
+                        }
+                    )
                 )
-            )
+            except Exception as e:
+                print(f"Error creating point {point_id}: {str(e)}")
+                continue
         
-        # Insert points in batches
-        self.client.upsert(
-            collection_name=self.collection_name,
-            points=points
-        )
+        # Insert points in smaller batches to prevent large payload issues
+        batch_size = 50
+        num_batches = (len(points) + batch_size - 1) // batch_size  # Ceiling division
         
-        print(f"Added {len(points)} points to {self.collection_name}")
+        for i in range(num_batches):
+            batch_start = i * batch_size
+            batch_end = min((i + 1) * batch_size, len(points))
+            batch = points[batch_start:batch_end]
+            
+            try:
+                self.client.upsert(
+                    collection_name=self.collection_name,
+                    points=batch
+                )
+                print(f"Added batch {i+1}/{num_batches} ({len(batch)} points) to {self.collection_name}")
+            except Exception as e:
+                print(f"Error upserting batch {i+1}/{num_batches}: {str(e)}")
+        
+        print(f"Added a total of {len(points)} points to {self.collection_name}")
         
         return ids
     
