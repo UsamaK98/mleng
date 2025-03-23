@@ -140,14 +140,40 @@ This document outlines the implementation plan for the Parliamentary Meeting Ana
 
 ### 4. Advanced Features (Estimated time: 0.5 day)
 - [ ] Implement interface for:
-  - Document upload
-  - Custom entity definition
-  - Query template creation
-  - Result export options
+  - Entity exploration and visualization
+  - Persistent caching for NER and embeddings
+  - Speaker selection interface
 
 ## Phase 4: Analysis Features Implementation (Estimated time: 4 days)
 
-### 1. Statistical Analysis (Estimated time: 1 day)
+### 1. Home Dashboard (Estimated time: 0.5 day)
+- [ ] Create informative home page with:
+  - Dataset overview and statistics
+  - Application capabilities explanation
+  - Tab descriptions and navigation guide
+  - Visual summary of parliamentary data
+- [ ] Add dataset timeline visualization
+- [ ] Include entity type distribution chart
+
+### 2. Entity Explorer (Estimated time: 1 day)
+- [ ] Design intuitive entity visualization interface with:
+  - Categorized entity listing (People, Organizations, etc.)
+  - Entity frequency metrics
+  - Entity relationship visualization
+  - Entity filtering and sorting options
+- [ ] Implement entity relationship graph
+- [ ] Create entity co-occurrence matrix
+
+### 3. Speaker Query Interface (Estimated time: 1 day)
+- [ ] Implement speaker-focused chat interface:
+  - Interactive speaker selection buttons
+  - Dynamic context loading for selected speaker
+  - Chat history for each speaker
+  - LLM integration via Ollama
+- [ ] Develop context retrieval optimization for speakers
+- [ ] Create speaker profile summary generation
+
+### 4. Statistical Analysis (Estimated time: 1 day)
 - [ ] Implement dashboard for:
   - Speaker participation metrics
   - Topic frequency analysis
@@ -155,31 +181,6 @@ This document outlines the implementation plan for the Parliamentary Meeting Ana
   - Entity co-occurrence patterns
 - [ ] Create visualization components for each metric
 - [ ] Add time-based filtering
-- [ ] Implement export functionality for analysis results
-
-### 2. Document Comparison (Estimated time: 1 day)
-- [ ] Create interface for comparing multiple meeting minutes
-- [ ] Implement similarity scoring between documents
-- [ ] Design visualization for document relationships
-- [ ] Add entity-based comparison views
-
-### 3. Network Analysis (Estimated time: 1 day)
-- [ ] Implement advanced graph analytics:
-  - Centrality measures for key entities
-  - Community detection for related topics
-  - Path analysis between entities
-  - Influence mapping
-- [ ] Create interactive graph exploration tools
-- [ ] Add filtering and highlighting based on network metrics
-
-### 4. Pattern Detection (Estimated time: 1 day)
-- [ ] Implement algorithms for:
-  - Recurring topic identification
-  - Speaker position changes over time
-  - Coalition and opposition pattern detection
-  - Emerging issue identification
-- [ ] Create alert system for pattern detection
-- [ ] Design visualization for temporal patterns
 
 ## Phase 5: Integration and Optimization (Estimated time: 3 days)
 
@@ -225,7 +226,13 @@ This document outlines the implementation plan for the Parliamentary Meeting Ana
 - Phase 5 (Integration and Optimization): 🔴 Not Started
 
 ## Next Steps
-1. Complete remaining items in Phase 3 (Advanced UI Features)
-2. Begin implementation of Statistical Analysis in Phase 4
+1. Complete remaining items in Phase 3 (Advanced UI Features):
+   - Implement persistent caching for NER and embeddings
+   - Create speaker selection interface
+2. Begin implementation of Phase 4:
+   - Develop Home Dashboard
+   - Create Entity Explorer
+   - Build Speaker Query Interface
+   - Implement Statistical Analysis
 3. Prepare test datasets for validation
 4. Set up continuous integration workflow 
