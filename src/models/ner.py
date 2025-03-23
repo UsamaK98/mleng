@@ -8,6 +8,7 @@ meeting minutes using the GLiNER model.
 import os
 import time
 import json
+import hashlib
 from typing import List, Dict, Any, Optional, Union, Tuple
 from pathlib import Path
 import pandas as pd
@@ -41,11 +42,71 @@ class EntityExtractor:
         self.batch_size = config_manager.config.gliner.batch_size
         self.model = None
         
-        # Create cache directory
+        # Create cache directory and versioning
         self.cache_dir = Path(config_manager.config.processed_data_dir) / "ner_cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
+        # Create metadata file to track cache version
+        self.metadata_file = self.cache_dir / "metadata.json"
+        self._initialize_cache_metadata()
+        
         logger.info(f"Initialized EntityExtractor with model: {self.model_name}")
+    
+    def _initialize_cache_metadata(self):
+        """Initialize or load cache metadata."""
+        if not self.metadata_file.exists():
+            metadata = {
+                "version": "1.0.0",
+                "model_name": self.model_name,
+                "entity_types": self.entity_types,
+                "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "last_updated": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "cache_files": {}
+            }
+            with open(self.metadata_file, 'w') as f:
+                json.dump(metadata, f, indent=2)
+        else:
+            try:
+                with open(self.metadata_file, 'r') as f:
+                    metadata = json.load(f)
+                # Update metadata if model or entity types changed
+                if metadata.get("model_name") != self.model_name or metadata.get("entity_types") != self.entity_types:
+                    metadata["model_name"] = self.model_name
+                    metadata["entity_types"] = self.entity_types
+                    metadata["last_updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                    with open(self.metadata_file, 'w') as f:
+                        json.dump(metadata, f, indent=2)
+            except Exception as e:
+                logger.error(f"Error loading cache metadata: {str(e)}")
+                # Re-initialize if metadata is corrupt
+                metadata = {
+                    "version": "1.0.0",
+                    "model_name": self.model_name,
+                    "entity_types": self.entity_types,
+                    "created_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "last_updated": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "cache_files": {}
+                }
+                with open(self.metadata_file, 'w') as f:
+                    json.dump(metadata, f, indent=2)
+    
+    def _update_cache_metadata(self, df_hash: str, file_path: str, num_records: int):
+        """Update cache metadata with new file information."""
+        try:
+            with open(self.metadata_file, 'r') as f:
+                metadata = json.load(f)
+            
+            metadata["last_updated"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            metadata["cache_files"][df_hash] = {
+                "path": str(file_path),
+                "num_records": num_records,
+                "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+            }
+            
+            with open(self.metadata_file, 'w') as f:
+                json.dump(metadata, f, indent=2)
+        except Exception as e:
+            logger.error(f"Error updating cache metadata: {str(e)}")
     
     def load_model(self) -> bool:
         """Load the GLiNER model.
@@ -151,51 +212,66 @@ class EntityExtractor:
     def extract_entities_from_dataframe(
         self, 
         df: pd.DataFrame, 
-        text_column: str = 'Content',
+        text_column: str = "Content", 
         use_cache: bool = True
     ) -> Tuple[pd.DataFrame, Dict[str, List[Dict[str, Any]]]]:
-        """Extract entities from a dataframe of parliamentary minutes.
+        """Extract entities from a dataframe containing text.
         
         Args:
-            df: DataFrame containing parliamentary minutes.
-            text_column: Name of the column containing text to extract entities from.
-            use_cache: Whether to use cached results if available.
+            df: Dataframe with text data.
+            text_column: Column containing text to process.
+            use_cache: Whether to use/update the cache.
             
         Returns:
-            Tuple of (Enhanced DataFrame with entity columns, Entity mapping dictionary)
+            Tuple of (enhanced dataframe, entity_map dictionary)
         """
-        if df.empty or text_column not in df.columns:
-            logger.warning(f"DataFrame is empty or missing {text_column} column")
+        start_time = time.time()
+        
+        if df.empty:
             return df.copy(), {}
         
-        # Check if we have entry_id for unique identification
+        # Create entry_id if it doesn't exist
         if 'entry_id' not in df.columns:
             df = df.copy()
-            df['entry_id'] = df.index
+            df['entry_id'] = df.index.astype(str)
         
-        # Prepare entity cache file path based on dataframe hash
-        df_hash = str(hash(frozenset(df['entry_id'].astype(str))))[:10]
+        # Generate a hash of the dataframe content for cache identification
+        content_str = "".join(df[text_column].fillna("").astype(str))
+        df_hash = hashlib.md5(content_str.encode()).hexdigest()[:10]
+        
+        # Prepare file path
         cache_file = self.cache_dir / f"entities_{df_hash}.json"
         
-        # Try to load from cache if enabled
+        # Initialize entity map
+        entity_map = {}
+        
+        # Try to load from cache
         if use_cache and cache_file.exists():
             try:
                 with open(cache_file, 'r') as f:
                     entity_map = json.load(f)
-                logger.info(f"Loaded {len(entity_map)} cached entity records")
-                return self._enhance_dataframe_with_entities(df, entity_map), entity_map
+                
+                # Check if all entry_ids are in the cache
+                all_cached = all(str(entry_id) in entity_map for entry_id in df['entry_id'])
+                
+                if all_cached:
+                    logger.info(f"Loaded entities for {len(entity_map)} records from cache")
+                    duration_ms = (time.time() - start_time) * 1000
+                    logger.info(f"Entity loading completed in {duration_ms/1000:.2f}s")
+                    
+                    # Enhance dataframe with cached entities
+                    enhanced_df = self._enhance_dataframe_with_entities(df, entity_map)
+                    return enhanced_df, entity_map
+                else:
+                    logger.info("Cache partially complete, will update missing entries")
             except Exception as e:
-                logger.warning(f"Failed to load entity cache: {str(e)}")
+                logger.warning(f"Failed to load entity cache: {str(e)}. Will regenerate.")
+                entity_map = {}
         
-        # Ensure model is loaded
-        if self.model is None and not self.load_model():
-            logger.error("Model not loaded, cannot extract entities")
+        # Load model if needed for entity extraction
+        if not self.model and not self.load_model():
+            logger.error("Failed to load GLiNER model, cannot extract entities")
             return df.copy(), {}
-        
-        start_time = time.time()
-        entity_map = {}
-        
-        logger.info(f"Extracting entities from {len(df)} records")
         
         # Batch process texts for efficiency
         texts = df[text_column].fillna("").tolist()
@@ -208,6 +284,10 @@ class EntityExtractor:
                 batch_ids = entry_ids[i:i+self.batch_size]
                 
                 for j, (text, entry_id) in enumerate(zip(batch_texts, batch_ids)):
+                    # Skip already cached entries if they exist
+                    if entry_id in entity_map and entity_map[entry_id]:
+                        continue
+                        
                     if not text or not text.strip():
                         entity_map[entry_id] = []
                         continue
@@ -215,9 +295,12 @@ class EntityExtractor:
                     entities = self.extract_entities_from_text(text)
                     entity_map[entry_id] = entities
             
-            # Save to cache
+            # Save to cache with versioning
             with open(cache_file, 'w') as f:
                 json.dump(entity_map, f)
+            
+            # Update metadata
+            self._update_cache_metadata(df_hash, str(cache_file), len(df))
             
             duration_ms = (time.time() - start_time) * 1000
             logger.info(f"Extracted entities from {len(df)} records in {duration_ms/1000:.2f}s")

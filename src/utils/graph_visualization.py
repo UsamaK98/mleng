@@ -1,8 +1,8 @@
 """
-Graph Visualization Utilities for Parliamentary Meeting Analyzer.
+Graph visualization utilities for the Parliamentary Meeting Analyzer application.
 
-This module provides functions to visualize and export knowledge graphs
-for visualization in various formats.
+This module provides functions for creating interactive graph visualizations
+using Plotly for network graphs.
 """
 
 import os
@@ -15,10 +15,34 @@ from typing import Dict, List, Any, Optional, Tuple, Set, Union
 from pathlib import Path
 import pandas as pd
 import plotly.graph_objects as go
+import random
+import math
 
 from src.utils.logging import logger
 from src.utils.config import config_manager
 from src.models.graph import KnowledgeGraph
+
+# Color mapping for node types
+NODE_COLORS = {
+    'person': '#1f77b4',     # Blue
+    'organization': '#ff7f0e', # Orange
+    'location': '#2ca02c',     # Green
+    'date': '#d62728',         # Red
+    'money': '#9467bd',        # Purple
+    'percent': '#8c564b',      # Brown
+    'time': '#e377c2',         # Pink
+    'ordinal': '#7f7f7f',      # Gray
+    'cardinal': '#bcbd22',     # Olive
+    'law': '#17becf',          # Cyan
+    'work_of_art': '#aec7e8',  # Light blue
+    'event': '#ffbb78',        # Light orange
+    'product': '#98df8a',      # Light green
+    'language': '#ff9896',     # Light red
+    'misc': '#c5b0d5'          # Light purple
+}
+
+# Default color for unknown node types
+DEFAULT_NODE_COLOR = '#c7c7c7'  # Light gray
 
 def export_graph_for_d3(
     kg: KnowledgeGraph,
@@ -381,170 +405,179 @@ def visualize_graph_matplotlib(
         plt.show()
 
 def create_plotly_graph(
-    kg: KnowledgeGraph,
-    max_nodes: int = 100
+    graph: nx.Graph,
+    layout_algo: str = 'fruchterman_reingold',
+    node_size_factor: float = 10.0,
+    edge_width_factor: float = 2.0,
+    show_node_labels: bool = True,
+    show_edge_labels: bool = False,
+    color_by_type: bool = True,
+    title: Optional[str] = None
 ) -> go.Figure:
-    """Create an interactive plotly graph visualization.
+    """Create an interactive Plotly graph from a NetworkX graph.
     
     Args:
-        kg: KnowledgeGraph instance.
-        max_nodes: Maximum number of nodes to include.
+        graph: NetworkX graph object
+        layout_algo: Layout algorithm ('fruchterman_reingold', 'spring', 'circular')
+        node_size_factor: Factor for node size scaling
+        edge_width_factor: Factor for edge width scaling
+        show_node_labels: Whether to show node labels
+        show_edge_labels: Whether to show edge labels
+        color_by_type: Whether to color nodes by type
+        title: Optional title for the graph
         
     Returns:
-        Plotly Figure object.
+        Plotly Figure object with interactive graph
     """
-    # Create a subgraph with important nodes as in other functions
-    if kg.graph.number_of_nodes() > max_nodes:
-        # Select important nodes
-        important_nodes = []
+    # Create a position map for nodes
+    if layout_algo == 'spring':
+        pos = nx.spring_layout(graph, seed=42)
+    elif layout_algo == 'circular':
+        pos = nx.circular_layout(graph)
+    else:  # default to fruchterman_reingold
+        pos = nx.fruchterman_reingold_layout(graph, seed=42)
+    
+    # Extract node information
+    node_x = []
+    node_y = []
+    node_text = []
+    node_size = []
+    node_color = []
+    
+    for node in graph.nodes():
+        node_attrs = graph.nodes[node]
         
-        # Include all speakers, topics, and organizations
-        for node_type in ["person", "topic", "organization"]:
-            nodes = kg.get_nodes_by_type(node_type)
-            important_nodes.extend([node_id for node_id, _ in nodes])
-        
-        # Include high-degree statements if space allows
-        if len(important_nodes) < max_nodes:
-            statements = kg.get_nodes_by_type("statement")
-            statement_degrees = [
-                (node_id, kg.graph.degree(node_id)) 
-                for node_id, _ in statements
-            ]
-            statement_degrees.sort(key=lambda x: x[1], reverse=True)
-            
-            remaining = max_nodes - len(important_nodes)
-            important_nodes.extend([node_id for node_id, _ in statement_degrees[:remaining]])
-        
-        g = kg.graph.subgraph(important_nodes)
-    else:
-        g = kg.graph
-    
-    # Node color map
-    node_colors = {
-        "person": "#3366CC",
-        "topic": "#33CC33",
-        "organization": "#FF9900",
-        "statement": "#CCCCCC",
-        "legislation": "#FF66CC",
-        "location": "#FFFF33",
-        "session": "#9966CC"
-    }
-    
-    # Edge color map
-    edge_colors = {
-        "made_statement": "#3366CC",
-        "about_topic": "#33CC33",
-        "mentions_person": "#CC3333",
-        "mentions_organization": "#FF9900",
-        "participated_in": "#9966CC",
-        "part_of": "#999999",
-        "responds_to": "#000000",
-        "related_topic": "#99FF99"
-    }
-    
-    # Compute layout
-    logger.info("Computing graph layout for visualization...")
-    pos = nx.spring_layout(g, dim=3, seed=42)
-    
-    # Prepare node trace
-    node_x, node_y, node_z = [], [], []
-    node_text, node_color, node_size = [], [], []
-    
-    for node, attrs in g.nodes(data=True):
-        x, y, z = pos[node]
+        # Get position
+        x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
-        node_z.append(z)
         
-        # Node color based on type
-        node_type = attrs.get("type", "unknown")
-        color = node_colors.get(node_type, "#CCCCCC")
-        node_color.append(color)
+        # Get node label (use 'label' attribute if available, otherwise use node id)
+        label = node_attrs.get('label', str(node))
+        node_text.append(label)
         
-        # Node size based on degree
-        size = g.degree(node) * 2 + 5
+        # Calculate node size based on degree (number of connections)
+        size = (graph.degree(node) + 1) * node_size_factor
         node_size.append(size)
         
-        # Node text
-        label = attrs.get("label", node)
-        if node_type == "statement" and "content" in attrs:
-            content = attrs["content"]
-            if len(content) > 50:
-                content = content[:47] + "..."
-            text = f"{label}<br>{content}"
+        # Get node color based on type
+        if color_by_type:
+            node_type = node_attrs.get('type', 'misc')
+            color = NODE_COLORS.get(node_type, DEFAULT_NODE_COLOR)
         else:
-            text = label
-        node_text.append(text)
+            color = DEFAULT_NODE_COLOR
+        
+        node_color.append(color)
     
-    node_trace = go.Scatter3d(
-        x=node_x, y=node_y, z=node_z,
-        mode='markers',
-        marker=dict(
-            size=node_size,
-            color=node_color,
-            line=dict(width=1, color='#FFFFFF')
-        ),
+    # Create nodes trace
+    node_trace = go.Scatter(
+        x=node_x,
+        y=node_y,
+        mode='markers+text' if show_node_labels else 'markers',
+        hoverinfo='text',
         text=node_text,
-        hoverinfo='text'
+        textposition='top center',
+        textfont=dict(size=10),
+        marker=dict(
+            color=node_color,
+            size=node_size,
+            line=dict(width=1, color='#888')
+        )
     )
     
-    # Prepare edge traces (group by type for coloring)
-    edge_traces = []
+    # Extract edge information
+    edge_x = []
+    edge_y = []
+    edge_width = []
+    edge_text = []
     
-    # Group edges by type
-    edge_by_type = {}
-    for u, v, attrs in g.edges(data=True):
-        edge_type = attrs.get("type", "unknown")
-        if edge_type not in edge_by_type:
-            edge_by_type[edge_type] = []
-        edge_by_type[edge_type].append((u, v, attrs))
+    for u, v, data in graph.edges(data=True):
+        # Get positions
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        
+        # Add line coordinates
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+        
+        # Get edge weight
+        weight = data.get('weight', 1)
+        width = weight * edge_width_factor
+        edge_width.append(width)
+        
+        # Get edge label
+        if 'label' in data:
+            edge_text.append(data['label'])
+        elif 'topic' in data:
+            edge_text.append(data['topic'])
+        else:
+            edge_text.append(f"{graph.nodes[u].get('label', u)} → {graph.nodes[v].get('label', v)}")
     
-    # Create a trace for each edge type
-    for edge_type, edges in edge_by_type.items():
-        edge_x, edge_y, edge_z = [], [], []
-        edge_text = []
-        
-        for u, v, attrs in edges:
-            x0, y0, z0 = pos[u]
-            x1, y1, z1 = pos[v]
-            
-            # Add line (with None as separator between edges)
-            edge_x.extend([x0, x1, None])
-            edge_y.extend([y0, y1, None])
-            edge_z.extend([z0, z1, None])
-            
-            # Edge text
-            label = attrs.get("label", edge_type)
-            source_label = g.nodes[u].get("label", u)
-            target_label = g.nodes[v].get("label", v)
-            text = f"{source_label} {label} {target_label}"
-            edge_text.append(text)
-        
-        color = edge_colors.get(edge_type, "#CCCCCC")
-        
-        edge_trace = go.Scatter3d(
-            x=edge_x, y=edge_y, z=edge_z,
-            mode='lines',
-            line=dict(color=color, width=1),
-            hoverinfo='none',
-            name=edge_type
-        )
-        
-        edge_traces.append(edge_trace)
+    # Create edges trace
+    edge_trace = go.Scatter(
+        x=edge_x,
+        y=edge_y,
+        mode='lines',
+        line=dict(
+            width=2,
+            color='#888'
+        ),
+        hoverinfo='text' if show_edge_labels else 'none',
+        text=edge_text if show_edge_labels else None,
+        opacity=0.5
+    )
     
     # Create figure
-    fig = go.Figure(data=[*edge_traces, node_trace])
+    fig = go.Figure(
+        data=[edge_trace, node_trace],
+        layout=go.Layout(
+            title=title,
+            showlegend=False,
+            hovermode='closest',
+            margin=dict(b=0, l=0, r=0, t=30),
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            plot_bgcolor='rgba(255,255,255,1)',
+            paper_bgcolor='rgba(255,255,255,1)',
+            width=900,
+            height=700
+        )
+    )
     
-    # Update layout
+    return fig
+
+def create_type_legend(fig: go.Figure) -> go.Figure:
+    """Add a legend to the figure showing node types and colors.
+    
+    Args:
+        fig: Plotly Figure object
+        
+    Returns:
+        Updated Plotly Figure with legend
+    """
+    # Create a hidden scatter trace for each node type
+    for node_type, color in NODE_COLORS.items():
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode='markers',
+                marker=dict(size=10, color=color),
+                name=node_type.capitalize(),
+                showlegend=True
+            )
+        )
+    
+    # Update layout to show legend
     fig.update_layout(
-        title='Parliamentary Knowledge Graph',
-        showlegend=False,
-        scene=dict(
-            xaxis=dict(showticklabels=False, title=''),
-            yaxis=dict(showticklabels=False, title=''),
-            zaxis=dict(showticklabels=False, title='')
-        ),
-        margin=dict(l=0, r=0, b=0, t=40)
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
     )
     
     return fig

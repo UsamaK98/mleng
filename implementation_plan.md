@@ -1,4 +1,4 @@
-# Parliamentary Meeting Analyzer Implementation Plan
+# Parliamentary Meeting Analyzer - Implementation Plan
 
 ## Project Overview
 This document outlines the implementation plan for the Parliamentary Meeting Analyzer, which uses GraphRAG technology to allow users to query and analyze parliamentary meeting minutes. The system incorporates GLiNER for named entity recognition, Ollama for embedding generation and chat functionality, and presents a user-friendly interface via Streamlit.
@@ -140,47 +140,89 @@ This document outlines the implementation plan for the Parliamentary Meeting Ana
 
 ### 4. Advanced Features (Estimated time: 0.5 day)
 - [ ] Implement interface for:
-  - Entity exploration and visualization
-  - Persistent caching for NER and embeddings
-  - Speaker selection interface
+  - Query template creation
+  - Result export options
+
+### 5. Additional UI Tabs (Estimated time: 2 days)
+- [x] Implement Home Tab:
+  - Overview of the application
+  - Dataset statistics and summary
+  - Navigation guidance
+  - Feature explanations
+  
+- [x] Implement Entity List Tab:
+  - Categorized display of all extracted entities
+  - Entity filtering and search
+  - Entity relationship visualization
+  - Entity details view
+  
+- [x] Implement Speaker Query Tab:
+  - Interactive speaker selection buttons
+  - Speaker-specific context retrieval
+  - Chat interface with Ollama/qwq model
+  - Speaker activity summary
+
+### 6. Caching Optimization (Estimated time: 1 day)
+- [x] Review and improve NER model caching:
+  - Persistent storage of extracted entities
+  - Versioning of entity data
+  - Efficient loading mechanisms
+  
+- [x] Enhance embedding caching:
+  - Persistent vector storage
+  - Metadata tracking for embeddings
+  - Session-independent cache access
+  
+- [x] Implement cache management UI:
+  - Cache status indicators
+  - Manual cache refresh options
+  - Cache integrity validation
 
 ## Phase 4: Analysis Features Implementation (Estimated time: 4 days)
 
-### 1. Home Dashboard (Estimated time: 0.5 day)
-- [ ] Create informative home page with:
-  - Dataset overview and statistics
-  - Application capabilities explanation
-  - Tab descriptions and navigation guide
-  - Visual summary of parliamentary data
-- [ ] Add dataset timeline visualization
-- [ ] Include entity type distribution chart
-
-### 2. Entity Explorer (Estimated time: 1 day)
-- [ ] Design intuitive entity visualization interface with:
-  - Categorized entity listing (People, Organizations, etc.)
-  - Entity frequency metrics
-  - Entity relationship visualization
-  - Entity filtering and sorting options
-- [ ] Implement entity relationship graph
-- [ ] Create entity co-occurrence matrix
-
-### 3. Speaker Query Interface (Estimated time: 1 day)
-- [ ] Implement speaker-focused chat interface:
-  - Interactive speaker selection buttons
-  - Dynamic context loading for selected speaker
-  - Chat history for each speaker
-  - LLM integration via Ollama
-- [ ] Develop context retrieval optimization for speakers
-- [ ] Create speaker profile summary generation
-
-### 4. Statistical Analysis (Estimated time: 1 day)
+### 1. Statistical Analysis (Estimated time: 1 day)
 - [ ] Implement dashboard for:
-  - Speaker participation metrics
+  - Speaker participation metrics (speaking time, frequency)
   - Topic frequency analysis
   - Sentiment analysis over time
   - Entity co-occurrence patterns
-- [ ] Create visualization components for each metric
-- [ ] Add time-based filtering
+- [ ] Create visualization components:
+  - Bar charts for participation
+  - Word clouds for topic frequency
+  - Line charts for sentiment over time
+  - Heat maps for entity co-occurrence
+- [ ] Add time-based filtering:
+  - Date range selection
+  - Meeting-specific filtering
+  - Topic-specific filtering
+- [ ] Implement export functionality for analysis results:
+  - CSV export
+  - Chart image export
+  - Summary report generation
+
+### 2. Document Comparison (Estimated time: 1 day)
+- [ ] Create interface for comparing multiple meeting minutes
+- [ ] Implement similarity scoring between documents
+- [ ] Design visualization for document relationships
+- [ ] Add entity-based comparison views
+
+### 3. Network Analysis (Estimated time: 1 day)
+- [ ] Implement advanced graph analytics:
+  - Centrality measures for key entities
+  - Community detection for related topics
+  - Path analysis between entities
+  - Influence mapping
+- [ ] Create interactive graph exploration tools
+- [ ] Add filtering and highlighting based on network metrics
+
+### 4. Pattern Detection (Estimated time: 1 day)
+- [ ] Implement algorithms for:
+  - Recurring topic identification
+  - Speaker position changes over time
+  - Coalition and opposition pattern detection
+  - Emerging issue identification
+- [ ] Create alert system for pattern detection
+- [ ] Design visualization for temporal patterns
 
 ## Phase 5: Integration and Optimization (Estimated time: 3 days)
 
@@ -226,13 +268,92 @@ This document outlines the implementation plan for the Parliamentary Meeting Ana
 - Phase 5 (Integration and Optimization): 🔴 Not Started
 
 ## Next Steps
-1. Complete remaining items in Phase 3 (Advanced UI Features):
-   - Implement persistent caching for NER and embeddings
-   - Create speaker selection interface
-2. Begin implementation of Phase 4:
-   - Develop Home Dashboard
-   - Create Entity Explorer
-   - Build Speaker Query Interface
-   - Implement Statistical Analysis
+1. Complete remaining items in Phase 3 (Advanced UI Features)
+2. Begin implementation of Statistical Analysis in Phase 4
 3. Prepare test datasets for validation
-4. Set up continuous integration workflow 
+4. Set up continuous integration workflow
+
+## Phase 1: Caching Optimization and Storage Solution
+
+### 1. Persistent Storage for Embeddings (COMPLETED)
+- Enhanced the `VectorStore` class to store embeddings persistently
+- Added metadata tracking for cache state
+- Implemented initialization checks and recovery
+
+### 2. Persistent Storage for Named Entities (COMPLETED)
+- Enhanced the `EntityExtractor` class for better caching
+- Added versioning and metadata tracking
+- Improved error handling for cached entities
+
+### 3. Cache Management Utility (COMPLETED)
+- Created the `CacheManager` class for cache validation and status reporting
+- Implemented methods for retrieving cache status and clearing caches
+- Added helper functions for cache maintenance
+
+## Phase 2: UI Enhancements
+
+### 1. Home Tab (COMPLETED)
+- Created a new home tab component that displays:
+  - Application overview and explanation of features
+  - Dataset statistics (documents, speakers, entities)
+  - System status showing cache availability
+  - Quick tips for navigation
+
+### 2. Entity List Tab (COMPLETED)
+- Created a new entity list tab component that displays:
+  - Categorized entities by type
+  - Filtering options by entity types, dates, speakers
+  - Entity search functionality
+  - Entity frequency visualizations
+  - Entity co-occurrence matrix
+
+### 3. Speaker Query Tab (COMPLETED)
+- Created a new speaker query tab component that enables:
+  - Speaker-focused search functionality
+  - Topic-based filtering of statements
+  - Speaker analytics with activity metrics
+  - Speaker relationship network visualization
+  - Advanced query capabilities
+
+## Phase 3: GraphRAG Enhancements (PENDING)
+
+### 1. Improved Query Analysis
+- Enhance query type detection for more accurate processing
+- Add support for comparative queries between speakers
+- Implement context-aware query processing
+
+### 2. Graph Traversal Optimization
+- Optimize path finding algorithms for faster responses
+- Implement prioritized node expansion based on relevance
+- Add depth-limited graph exploration for complex queries
+
+### 3. Query Result Visualization
+- Create visual representations of query results
+- Implement interactive result exploration
+- Add support for saving and comparing query results
+
+## Phase 4: Statistical Analysis Dashboard (PENDING)
+
+### 1. Speaker Statistics
+- Track speaker activity over time
+- Analyze speaker sentiment on various topics
+- Compare speaking patterns between different speakers
+
+### 2. Topic Analysis
+- Track topic trends over time
+- Identify correlations between topics
+- Analyze topic distribution across sessions
+
+### 3. Network Analysis
+- Identify key influencers in the speaker network
+- Analyze community structures in discussions
+- Measure centrality and importance of entities
+
+## Implementation Timeline
+
+| Task | Estimated Completion | Status |
+|------|----------------------|--------|
+| Caching Optimization | Week 1 | COMPLETED |
+| UI Enhancements | Week 2 | COMPLETED |
+| GraphRAG Enhancements | Week 3 | PENDING |
+| Statistical Analysis | Week 4 | PENDING | 

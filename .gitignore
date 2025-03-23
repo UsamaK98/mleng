@@ -73,16 +73,6 @@ processed_data/
 **/chromadb_data/
 **/qdrant_data/
 
-# Vector database files
-.chroma/
-chromadb/
-chroma_db/
-qdrant_storage/
-qdrant/
-data/chromadb/
-data/chroma_db/
-data/qdrant_storage/
-data/qdrant/
-
 # Original project files
-project-info/ 
+/development_plan.md
+implementation_plan.md

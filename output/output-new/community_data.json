@@ -1,23 +1,23 @@
 {
-  "total_communities": 11,
+  "total_communities": 10,
   "communities": [
     {
       "community_id": "0",
-      "size": 179,
+      "size": 204,
       "node_types": {
         "session": 1,
-        "person": 15,
-        "statement": 102,
-        "organization": 38,
-        "topic": 11,
-        "location": 10,
+        "person": 16,
+        "statement": 103,
+        "organization": 46,
+        "topic": 22,
+        "location": 14,
         "legislation": 2
       },
       "key_entities": {
         "person": [
+          "Liz Smith",
           "The Deputy First Minister and Cabinet Secretary for Economy and Gaelic",
           "The Deputy Presiding Officer",
-          "Paul Sweeney",
           "Presiding Officer",
           "Kenneth Gibson"
         ],
@@ -26,21 +26,21 @@
           "UK Government",
           "European Commission",
           "EU",
-          "local authorities"
+          "Scottish Fiscal Commission"
         ],
         "topic": [
+          "housing",
+          "fuel poverty",
+          "climate",
           "health",
-          "third sector",
-          "public sector",
-          "debt management",
-          "positive futures project"
+          "economic prosperity"
         ],
         "location": [
           "Scotland",
           "England",
+          "Shetland",
           "Wales",
-          "Northern Ireland",
-          "UK"
+          "Northern Ireland"
         ],
         "legislation": [
           "Barnett consequentials",
@@ -50,15 +50,15 @@
     },
     {
       "community_id": "1",
-      "size": 212,
+      "size": 205,
       "node_types": {
         "session": 1,
         "person": 14,
-        "statement": 129,
+        "statement": 122,
+        "organization": 29,
         "location": 7,
         "legislation": 9,
-        "topic": 23,
-        "organization": 29
+        "topic": 23
       },
       "key_entities": {
         "person": [
@@ -67,6 +67,13 @@
           "Jamie Halcro Johnston",
           "Mr Lonsdale",
           "convener"
+        ],
+        "organization": [
+          "Scottish Parliament",
+          "Universities Scotland",
+          "University of Dundee",
+          "Federation of Small Businesses",
+          "ScotWind"
         ],
         "location": [
           "Europe",
@@ -79,65 +86,58 @@
           "income tax",
           "apprenticeship levy",
           "corporation tax",
-          "framework legislation",
+          "visa issues",
           "visa regime"
         ],
         "topic": [
-          "economy",
           "research",
           "education",
           "hospitality sector",
+          "graduate apprenticeships",
           "cross-subsidy"
-        ],
-        "organization": [
-          "universities",
-          "university",
-          "Universities Scotland",
-          "University of Dundee",
-          "ScotWind"
         ]
       }
     },
     {
       "community_id": "2",
-      "size": 261,
+      "size": 250,
       "node_types": {
         "session": 1,
-        "person": 19,
+        "person": 15,
         "statement": 142,
-        "organization": 32,
-        "topic": 55,
-        "legislation": 8,
+        "organization": 30,
+        "topic": 51,
+        "legislation": 7,
         "location": 4
       },
       "key_entities": {
         "person": [
           "Kate Forbes",
-          "Michael Marra",
-          "Ross Greer",
           "Keith McDonald",
-          "Katie Allison"
+          "Katie Allison",
+          "cabinet secretary",
+          "Deputy First Minister"
         ],
         "organization": [
           "Government",
           "committee",
           "Parliament",
-          "Scottish Fiscal Commission",
+          "universities",
           "government"
         ],
         "topic": [
+          "economy",
           "economic growth",
           "poverty",
           "sustainable development goals",
-          "national performance framework",
-          "child poverty"
+          "national performance framework"
         ],
         "legislation": [
           "national performance framework",
           "NPF",
           "Scottish child payment",
-          "framework",
-          "policy"
+          "policies",
+          "framework"
         ],
         "location": [
           "rural areas",
@@ -148,37 +148,37 @@
       }
     },
     {
-      "community_id": "6",
-      "size": 102,
+      "community_id": "7",
+      "size": 93,
       "node_types": {
-        "person": 8,
-        "statement": 41,
-        "organization": 14,
-        "topic": 27,
-        "legislation": 9,
-        "location": 3
+        "person": 7,
+        "statement": 39,
+        "topic": 23,
+        "organization": 12,
+        "legislation": 8,
+        "location": 4
       },
       "key_entities": {
         "person": [
           "Professor Heald",
-          "Liz Smith",
-          "Mr Lott",
+          "Michael Marra",
           "Alistair Darling",
-          "Taxpayer"
-        ],
-        "organization": [
-          "HMRC",
-          "Scottish Parliament",
-          "councils",
-          "Scottish Governments",
-          "Finance and Public Administration Committee"
+          "Taxpayer",
+          "Anton Muscatelli"
         ],
         "topic": [
           "Scottish budget",
           "tax avoidance",
           "tax",
           "tax system",
-          "fiscal framework"
+          "parliamentary question"
+        ],
+        "organization": [
+          "HMRC",
+          "university",
+          "Finance and Public Administration Committee",
+          "sector",
+          "Official Report"
         ],
         "legislation": [
           "national insurance",
@@ -189,70 +189,73 @@
         ],
         "location": [
           "Dundee",
-          "south",
-          "In England"
-        ]
-      }
-    },
-    {
-      "community_id": "3",
-      "size": 53,
-      "node_types": {
-        "person": 5,
-        "statement": 32,
-        "organization": 4,
-        "location": 2,
-        "topic": 10
-      },
-      "key_entities": {
-        "person": [
-          "I",
-          "Michelle Thomson",
-          "you",
-          "Keith",
-          "Major Tom"
-        ],
-        "organization": [
-          "We",
-          "colleagues",
-          "National Audit Office",
-          "Economy and Fair Work Committee"
-        ],
-        "location": [
-          "Scottish",
-          "Earth"
-        ],
-        "topic": [
-          "hypothecated taxes",
-          "Politically",
-          "capex",
-          "health-harming products",
-          "alcohol-related conditions"
+          "south of the border",
+          "Highlands",
+          "south"
         ]
       }
     },
     {
       "community_id": "5",
-      "size": 53,
+      "size": 65,
       "node_types": {
-        "person": 3,
-        "statement": 24,
-        "organization": 6,
+        "person": 6,
+        "statement": 38,
+        "organization": 5,
+        "topic": 11,
+        "location": 3,
+        "legislation": 2
+      },
+      "key_entities": {
+        "person": [
+          "I",
+          "Michelle Thomson",
+          "You",
+          "you",
+          "Keith"
+        ],
+        "organization": [
+          "We",
+          "colleagues",
+          "National Audit Office",
+          "business community",
+          "Economy and Fair Work Committee"
+        ],
+        "topic": [
+          "tax strategy",
+          "fiscal framework",
+          "hypothecated taxes",
+          "Politically",
+          "capex"
+        ],
+        "location": [
+          "Scottish",
+          "In England",
+          "Earth"
+        ],
+        "legislation": [
+          "tax framework",
+          "new deal for business agreement"
+        ]
+      }
+    },
+    {
+      "community_id": "6",
+      "size": 59,
+      "node_types": {
+        "person": 5,
+        "statement": 29,
         "legislation": 3,
-        "topic": 17
+        "topic": 17,
+        "organization": 5
       },
       "key_entities": {
         "person": [
           "The Convener",
           "Professor David Heald",
-          "Thank you"
-        ],
-        "organization": [
-          "SFC",
-          "Opposition parties",
-          "RSE",
-          "Royal Society",
-          "enterprises"
+          "Vikki",
+          "Thank you",
+          "Da-Lo"
         ],
         "legislation": [
           "Scottish income tax",
@@ -262,36 +265,42 @@
         "topic": [
           "public services",
           "expenditure",
+          "public service reform",
           "council tax reform",
-          "tax options",
-          "capital expenditure"
+          "tax options"
+        ],
+        "organization": [
+          "SFC",
+          "RSE",
+          "Royal Society",
+          "enterprises",
+          "Indeed"
         ]
       }
     },
     {
-      "community_id": "7",
-      "size": 78,
+      "community_id": "8",
+      "size": 70,
       "node_types": {
-        "person": 4,
-        "statement": 37,
-        "organization": 8,
-        "topic": 23,
-        "legislation": 2,
-        "location": 4
+        "person": 3,
+        "statement": 32,
+        "organization": 11,
+        "topic": 21,
+        "legislation": 1,
+        "location": 2
       },
       "key_entities": {
         "person": [
           "Professor Bell",
           "David Heald",
-          "David Blanchflower",
-          "Anton Muscatelli"
+          "David Blanchflower"
         ],
         "organization": [
           "public sector",
           "private sector",
           "NHS",
-          "Institute for Fiscal Studies",
-          "Conservative Government"
+          "health service",
+          "Health and Social Care Committee"
         ],
         "topic": [
           "direct taxes",
@@ -301,39 +310,29 @@
           "climate emergency"
         ],
         "legislation": [
-          "stamp duty",
           "capital gains tax"
         ],
         "location": [
-          "south of the border",
-          "Highlands",
           "north of the border",
           "remote rural areas"
         ]
       }
     },
     {
-      "community_id": "8",
-      "size": 73,
+      "community_id": "9",
+      "size": 71,
       "node_types": {
         "person": 3,
         "statement": 31,
-        "organization": 6,
         "topic": 32,
-        "legislation": 1
+        "legislation": 1,
+        "organization": 4
       },
       "key_entities": {
         "person": [
           "Richard Robinson",
           "Mr Robinson",
           "Ms Thomson"
-        ],
-        "organization": [
-          "national health service",
-          "Health and Social Care Committee",
-          "His Majesty\u2019s Revenue and Customs",
-          "auditors",
-          "parliamentarians"
         ],
         "topic": [
           "tax policy",
@@ -343,31 +342,34 @@
           "reform"
         ],
         "legislation": [
-          "policies"
+          "stamp duty"
+        ],
+        "organization": [
+          "His Majesty\u2019s Revenue and Customs",
+          "auditors",
+          "parliamentarians",
+          "third sector"
         ]
       }
     },
     {
-      "community_id": "9",
-      "size": 72,
+      "community_id": "3",
+      "size": 159,
       "node_types": {
-        "person": 2,
-        "statement": 36,
-        "organization": 9,
-        "topic": 22,
-        "legislation": 3
+        "person": 5,
+        "statement": 67,
+        "topic": 49,
+        "organization": 13,
+        "legislation": 20,
+        "location": 5
       },
       "key_entities": {
         "person": [
+          "David Lonsdale",
           "Vikki Manson",
-          "Ms Manson"
-        ],
-        "organization": [
-          "small businesses",
-          "Small businesses",
-          "FSB",
-          "Federation of Small Businesses",
-          "small business community"
+          "Ms Manson",
+          "Vicky Manson",
+          "Convener"
         ],
         "topic": [
           "retail",
@@ -376,50 +378,19 @@
           "public contracts",
           "procurement"
         ],
-        "legislation": [
-          "regulations",
-          "community wealth building bill",
-          "regulation"
-        ]
-      }
-    },
-    {
-      "community_id": "10",
-      "size": 117,
-      "node_types": {
-        "person": 3,
-        "statement": 44,
-        "topic": 31,
-        "organization": 14,
-        "legislation": 20,
-        "location": 5
-      },
-      "key_entities": {
-        "person": [
-          "David Lonsdale",
-          "Vicky Manson",
-          "Convener"
-        ],
-        "topic": [
-          "tax strategy",
-          "non-domestic rates",
-          "single-use cups",
-          "council tax",
-          "retail sales"
-        ],
         "organization": [
-          "health service",
+          "small businesses",
+          "Small businesses",
           "retailers",
-          "Alcohol Focus Scotland",
-          "Fraser of Allander Institute",
+          "FSB",
           "grocery stores"
         ],
         "legislation": [
+          "regulations",
           "minimum unit pricing",
+          "community wealth building bill",
           "programme for government",
-          "public health levy",
-          "MUP",
-          "visitor levy"
+          "regulation"
         ],
         "location": [
           "MUP",
@@ -432,31 +403,38 @@
     },
     {
       "community_id": "4",
-      "size": 16,
+      "size": 40,
       "node_types": {
-        "statement": 3,
-        "topic": 6,
-        "location": 4,
-        "organization": 3
+        "person": 2,
+        "statement": 18,
+        "organization": 8,
+        "legislation": 4,
+        "topic": 8
       },
       "key_entities": {
-        "topic": [
-          "housing",
-          "fuel poverty",
-          "climate",
-          "economic prosperity",
-          "care"
-        ],
-        "location": [
-          "Shetland",
-          "Highlands and Islands",
-          "North Ayrshire",
-          "Moray"
+        "person": [
+          "Ross Greer",
+          "me"
         ],
         "organization": [
-          "local authority",
-          "national Government",
-          "Highland Council"
+          "Alcohol Focus Scotland",
+          "Fraser of Allander Institute",
+          "University of Edinburgh",
+          "retail sector",
+          "retail consortium"
+        ],
+        "legislation": [
+          "public health levy",
+          "MUP",
+          "policy",
+          "PFG"
+        ],
+        "topic": [
+          "NPF",
+          "health-harming products",
+          "alcohol-related conditions",
+          "drug and alcohol partnerships",
+          "health and social care partnerships"
         ]
       }
     }
