@@ -61,6 +61,15 @@ class QdrantConfig:
     timeout: float = 30.0
 
 @dataclass
+class ChromaDBConfig:
+    """Configuration for ChromaDB vector database (fallback)."""
+    collection_name: str = "parliament"
+    persist_directory: str = str(Path(__file__).parent.parent.parent / "data" / "chromadb_data")
+    embedding_function: str = "default"  # Use default embeddings from OllamaService
+    batch_size: int = 100
+    distance: str = "cosine"
+
+@dataclass
 class GraphRAGConfig:
     """Configuration for GraphRAG."""
     max_hops: int = 2
@@ -75,6 +84,7 @@ class GraphRAGConfig:
         "mentions_location", "related_topic", "affiliated_with"
     ])
     cache_expiry_seconds: int = 3600
+    similarity_threshold: float = 0.7
 
 @dataclass
 class GLiNERConfig:
@@ -103,6 +113,7 @@ class Config:
     graphrag: GraphRAGConfig = field(default_factory=GraphRAGConfig)
     gliner: GLiNERConfig = field(default_factory=GLiNERConfig)
     qdrant: QdrantConfig = field(default_factory=QdrantConfig)
+    chromadb: ChromaDBConfig = field(default_factory=ChromaDBConfig)
     
     # UI configuration
     ui_title: str = "Parliamentary Meeting Analyzer"
@@ -168,7 +179,7 @@ class ConfigManager:
             # Update configuration
             for key, value in config_dict.items():
                 if hasattr(self.config, key):
-                    if isinstance(value, dict) and key in ["ollama", "graphrag", "gliner", "qdrant"]:
+                    if isinstance(value, dict) and key in ["ollama", "graphrag", "gliner", "qdrant", "chromadb"]:
                         # Handle nested config objects
                         if key == "ollama":
                             for k, v in value.items():
@@ -182,6 +193,9 @@ class ConfigManager:
                         elif key == "qdrant":
                             for k, v in value.items():
                                 setattr(self.config.qdrant, k, v)
+                        elif key == "chromadb":
+                            for k, v in value.items():
+                                setattr(self.config.chromadb, k, v)
                     else:
                         setattr(self.config, key, value)
             

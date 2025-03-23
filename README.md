@@ -96,23 +96,6 @@ Then open your browser to the URL displayed in the console (typically http://loc
 - `src/web/`: Streamlit web application
 - `src/demo/`: Demo scripts
 
-## Vector Storage
-
-The system supports two vector storage backends:
-
-1. **Qdrant** (default): A high-performance vector database
-2. **ChromaDB** (fallback): Used automatically when Qdrant is not available or connection fails
-
-To use ChromaDB explicitly, initialize the VectorStore with `use_qdrant=False`:
-
-```python
-vector_store = VectorStore(
-    collection_name="my_collection",
-    ollama_service=ollama_service,
-    use_qdrant=False  # Force ChromaDB usage
-)
-```
-
 ## Troubleshooting
 
 ### Ollama Service Issues
@@ -123,31 +106,19 @@ If you encounter errors related to the Ollama service:
 2. Check that you have pulled the required model (`ollama pull llama3`)
 3. The application will attempt to initialize the Ollama service automatically if not provided
 
-### Vector Database Issues
-
-If you encounter errors with Qdrant:
-
-1. The system will automatically fall back to ChromaDB if Qdrant is not available
-2. You can test vector storage connectivity with `python src/test_vector_store.py`
-3. For better performance with local development, ChromaDB is a good alternative to Qdrant
-
 ### Embedding Dimensions
 
-The system now automatically detects embedding dimensions from the Ollama service. If you encounter embedding dimension issues, you can explicitly set it in your configuration:
+If you encounter an error about `embedding_dimensions`, ensure your Ollama configuration in `config.json` uses `embedding_dim` instead:
 
 ```json
 {
   "ollama": {
     "base_url": "http://localhost:11434",
     "model_name": "llama3",
-    "embedding_dim": 768
+    "embedding_dim": 4096
   }
 }
 ```
-
-Different models may have different embedding dimensions:
-- Most embedding models: 768 dimensions
-- Larger models: 1024 or 1536 dimensions
 
 ### Streamlit Errors
 

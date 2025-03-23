@@ -17,9 +17,6 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from datetime import datetime
 import plotly.express as px
-from io import BytesIO
-from typing import List, Dict, Any
-import logging
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -32,16 +29,8 @@ from src.models.ner import EntityExtractor
 from src.models.graph import KnowledgeGraph
 from src.models.graphrag import GraphRAG
 from src.services.ollama import OllamaService
-from src.storage.vector_db import VectorStore, QDRANT_AVAILABLE, CHROMA_AVAILABLE
+from src.storage.vector_db import VectorStore
 from src.utils.graph_visualization import create_plotly_graph, export_community_data
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-# Initialize config manager
-config_manager.load_config()
 
 # Set page configuration
 st.set_page_config(
@@ -67,17 +56,6 @@ if "initialized" not in st.session_state:
     st.session_state.available_dates = []
     st.session_state.selected_dates = []
     st.session_state.query_history = []
-    st.session_state.loading_complete = False
-    st.session_state.retrieval_mode = "hybrid"
-    st.session_state.results = []
-    st.session_state.answer = ""
-    st.session_state.statements = []
-    st.session_state.date_options = []
-    st.session_state.selected_date = None
-    st.session_state.df = None
-    st.session_state.error = None
-    st.session_state.status_message = "Application starting..."
-    st.session_state.storage_backend = "Unknown"
 
 def initialize_services():
     """Initialize all services required for the application."""
@@ -444,119 +422,58 @@ def render_graph_section():
                     st.plotly_chart(fig, use_container_width=True)
 
 def render_data_explorer():
-    """Render the data explorer section."""
+    """Render data explorer section."""
     st.header("Data Explorer")
     
-    if st.session_state.current_session_data is None:
-        st.info("Please load session data first")
+    if not st.session_state.available_dates:
+        st.warning("No data loaded yet")
         return
     
-    # Session data overview
-    st.subheader("Session Data Overview")
+    # Display session date selector
+    st.subheader("Session Data")
     
-    df = st.session_state.current_session_data
-    
-    # Show basic stats
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Statements", len(df))
-    with col2:
-        st.metric("Unique Speakers", df["Speaker"].nunique())
-    with col3:
-        st.metric("Session Dates", df["Date"].dt.date.nunique())
-    
-    # Speaker distribution
-    st.subheader("Speaker Contribution Analysis")
-    
-    speaker_counts = df["Speaker"].value_counts().head(10)
-    fig = px.bar(
-        x=speaker_counts.index,
-        y=speaker_counts.values,
-        title="Top 10 Speakers by Number of Statements"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Entity analysis
-    if st.session_state.entity_map is not None:
-        st.subheader("Entity Analysis")
+    # Display the current data frame
+    if st.session_state.current_session_data is not None:
+        st.subheader("Current Session Data")
+        st.dataframe(st.session_state.current_session_data, height=400)
         
-        # Group entities by type
-        entities_by_type = {}
+        # Show speaker stats
+        st.subheader("Speaker Statistics")
+        speaker_counts = st.session_state.current_session_data["Speaker"].value_counts().reset_index()
+        speaker_counts.columns = ["Speaker", "Contributions"]
         
-        for _, entities in st.session_state.entity_map.items():
-            for entity in entities:
-                entity_type = entity.get("label")
-                if entity_type not in entities_by_type:
-                    entities_by_type[entity_type] = {}
-                
-                entity_text = entity.get("text")
-                if entity_text not in entities_by_type[entity_type]:
-                    entities_by_type[entity_type][entity_text] = 0
-                
-                entities_by_type[entity_type][entity_text] += 1
-        
-        # Show top entities by type
-        tabs = st.tabs(list(entities_by_type.keys()))
-        
-        for i, entity_type in enumerate(entities_by_type.keys()):
-            with tabs[i]:
-                # Sort entities by frequency
-                sorted_entities = sorted(
-                    entities_by_type[entity_type].items(),
-                    key=lambda x: x[1],
-                    reverse=True
-                )
-                
-                # Create DataFrame
-                entity_df = pd.DataFrame(
-                    sorted_entities[:20],
-                    columns=["Entity", "Frequency"]
-                )
-                
-                # Show chart
-                fig = px.bar(
-                    entity_df,
-                    x="Entity",
-                    y="Frequency",
-                    title=f"Top 20 {entity_type} Entities"
-                )
-                st.plotly_chart(fig, use_container_width=True)
+        st.bar_chart(speaker_counts.set_index("Speaker"))
+    else:
+        st.info("Select dates to view session data")
+
+def auto_initialize():
+    """Automatically initialize all components on startup."""
+    if not st.session_state.initialized:
+        initialize_services()
     
-    # Data preview
-    st.subheader("Data Preview")
+    if not st.session_state.available_dates and st.session_state.initialized:
+        load_data()
     
-    # Add filters
-    with st.expander("Filters"):
-        # Date filter
-        dates = sorted(df["Date"].dt.date.unique())
-        selected_date = st.selectbox("Filter by date:", ["All"] + [str(d) for d in dates])
-        
-        # Speaker filter
-        speakers = sorted(df["Speaker"].unique())
-        selected_speaker = st.selectbox("Filter by speaker:", ["All"] + list(speakers))
-        
-        # Text search
-        search_text = st.text_input("Search in content:")
+    # If we have data but no session data loaded, load all available dates
+    if st.session_state.available_dates and st.session_state.current_session_data is None:
+        st.session_state.selected_dates = st.session_state.available_dates[:3]  # Load the first few dates to keep it manageable
+        load_selected_sessions()
     
-    # Apply filters
-    filtered_df = df.copy()
+    # If we have session data but no entities extracted, extract them
+    if st.session_state.current_session_data is not None and st.session_state.entity_map is None:
+        extract_entities()
     
-    if selected_date != "All":
-        filtered_df = filtered_df[filtered_df["Date"].dt.date.astype(str) == selected_date]
+    # If we have entities but no graph built, build it
+    if st.session_state.entity_map is not None and not st.session_state.graph_built:
+        build_knowledge_graph()
     
-    if selected_speaker != "All":
-        filtered_df = filtered_df[filtered_df["Speaker"] == selected_speaker]
+    # If we have a graph but no vector store, build it
+    if st.session_state.graph_built and st.session_state.vector_store is not None:
+        build_vector_store()
     
-    if search_text:
-        filtered_df = filtered_df[filtered_df["Content"].str.contains(search_text, case=False)]
-    
-    # Show filtered data
-    st.write(f"Showing {len(filtered_df)} of {len(df)} statements")
-    st.dataframe(
-        filtered_df[["Date", "Speaker", "Content"]],
-        use_container_width=True,
-        height=400
-    )
+    # If we have a graph and vector store but no GraphRAG, initialize it
+    if st.session_state.graph_built and not st.session_state.graphrag:
+        initialize_graphrag()
 
 def render_query_section(settings):
     """Render the query section."""
@@ -589,7 +506,8 @@ def render_query_section(settings):
             "Query mode:",
             ["hybrid", "graph", "vector"],
             horizontal=True,
-            index=["hybrid", "graph", "vector"].index(settings["query_mode"])
+            index=["hybrid", "graph", "vector"].index(settings["query_mode"]),
+            key="query_section_mode"
         )
     
     # Process query
@@ -644,106 +562,26 @@ def render_query_section(settings):
                 st.write(f"**Processing Time:** {query_record['time']:.2f}s")
                 st.write(f"**Sources:** {len(query_record['result'].get('sources', []))}")
 
-def check_vector_db_availability():
-    """Check which vector database backends are available and return status messages."""
-    messages = []
-    if QDRANT_AVAILABLE:
-        messages.append(("✅ Qdrant is available", "success"))
-    else:
-        messages.append(("❌ Qdrant is not available", "warning"))
-    
-    if CHROMA_AVAILABLE:
-        messages.append(("✅ ChromaDB is available", "success"))
-    else:
-        messages.append(("❌ ChromaDB is not available - functionality may be limited", "warning"))
-    
-    return messages
-
-def render_main():
-    """Render the main content area."""
-    st.title(config_manager.config.ui_title)
-    st.markdown(config_manager.config.ui_description)
-    
-    # Quick initialization option
-    if not st.session_state.initialized:
-        st.warning("System is not fully initialized. You can initialize step by step using the sidebar controls, or use the quick start option below.")
-        
-        if st.button("🚀 Quick Start (Load Data and Initialize All Components)"):
-            with st.spinner("Loading data and initializing components..."):
-                # Load data
-                df = load_data()
-                if len(df) > 0:
-                    # Build knowledge graph
-                    knowledge_graph = build_knowledge_graph()
-                    if knowledge_graph:
-                        # Initialize vector store
-                        vector_store = initialize_vector_store()
-                        if vector_store:
-                            # Initialize GraphRAG
-                            initialize_graphrag()
-    
-    # Query interface (only show when initialized)
-    if st.session_state.initialized:
-        st.header("Ask a Question")
-        query = st.text_input("Enter your question about parliamentary proceedings:")
-        
-        col1, col2 = st.columns([1, 3])
-        with col1:
-            if st.button("Submit Query"):
-                if query:
-                    with st.spinner("Processing query..."):
-                        result = process_query(query, st.session_state.retrieval_mode)
-                        st.session_state.answer = result["answer"]
-                        st.session_state.results = result["results"]
-                        st.session_state.prompt = result["prompt"]
-        
-        with col2:
-            st.info(f"Using {st.session_state.retrieval_mode} retrieval mode with {st.session_state.storage_backend} for vector storage.")
-        
-        # Display answer
-        if st.session_state.answer:
-            st.header("Answer")
-            st.markdown(st.session_state.answer)
-            
-            # Display retrieved documents
-            if st.session_state.results:
-                with st.expander("View Retrieved Documents"):
-                    for i, doc in enumerate(st.session_state.results):
-                        st.markdown(f"**Document {i+1}**")
-                        content = doc.get('payload', {}).get('Content', '')
-                        date = doc.get('payload', {}).get('Date', 'Unknown date')
-                        speaker = doc.get('payload', {}).get('Speaker', 'Unknown speaker')
-                        source = doc.get('source', 'unknown')
-                        score = doc.get('score', 0.0)
-                        
-                        st.markdown(f"**Date:** {date}")
-                        st.markdown(f"**Speaker:** {speaker}")
-                        st.markdown(f"**Content:** {content}")
-                        st.markdown(f"**Source:** {source}")
-                        st.markdown(f"**Relevance Score:** {score:.4f}")
-                        st.markdown("---")
-    
-    # Data visualization (available after loading)
-    if st.session_state.loading_complete:
-        st.header("Data Exploration")
-        
-        tab1, tab2 = st.tabs(["Parliamentary Data", "Knowledge Graph"])
-        
-        with tab1:
-            if st.session_state.df is not None:
-                st.write(f"Total statements: {len(st.session_state.df)}")
-                st.dataframe(st.session_state.df)
-        
-        with tab2:
-            if st.session_state.graph_built:
-                render_graph_section()
-            else:
-                st.warning("Knowledge graph not built yet. Use the sidebar to build it.")
-
-# Main app
 def main():
-    render_sidebar()
-    render_main()
+    """Main application function."""
+    # Auto-initialize components
+    auto_initialize()
+    
+    # Render sidebar and get settings
+    settings = render_sidebar()
+    
+    # Main content
+    tab1, tab2, tab3 = st.tabs(["GraphRAG Query", "Knowledge Graph", "Data Explorer"])
+    
+    with tab1:
+        if settings:
+            render_query_section(settings)
+    
+    with tab2:
+        render_graph_section()
+    
+    with tab3:
+        render_data_explorer()
 
 if __name__ == "__main__":
     main() 

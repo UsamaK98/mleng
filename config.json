@@ -1,0 +1,12 @@
+{
+  "chromadb": {
+    "embedding_function": "ollama"
+  },
+  "qdrant": {
+    "host": "localhost",
+    "port": 6333
+  },
+  "graphrag": {
+    "similarity_threshold": 0.7
+  }
+} 
