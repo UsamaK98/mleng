@@ -17,6 +17,8 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from datetime import datetime
 import plotly.express as px
+from io import BytesIO
+from typing import List, Dict, Any
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -29,7 +31,7 @@ from src.models.ner import EntityExtractor
 from src.models.graph import KnowledgeGraph
 from src.models.graphrag import GraphRAG
 from src.services.ollama import OllamaService
-from src.storage.vector_db import VectorStore
+from src.storage.vector_db import VectorStore, QDRANT_AVAILABLE, CHROMA_AVAILABLE
 from src.utils.graph_visualization import create_plotly_graph, export_community_data
 
 # Set page configuration
@@ -56,6 +58,17 @@ if "initialized" not in st.session_state:
     st.session_state.available_dates = []
     st.session_state.selected_dates = []
     st.session_state.query_history = []
+    st.session_state.loading_complete = False
+    st.session_state.retrieval_mode = "hybrid"
+    st.session_state.results = []
+    st.session_state.answer = ""
+    st.session_state.statements = []
+    st.session_state.date_options = []
+    st.session_state.selected_date = None
+    st.session_state.df = None
+    st.session_state.error = None
+    st.session_state.status_message = "Application starting..."
+    st.session_state.storage_backend = "Unknown"
 
 def initialize_services():
     """Initialize all services required for the application."""
@@ -622,23 +635,108 @@ def render_query_section(settings):
                 st.write(f"**Processing Time:** {query_record['time']:.2f}s")
                 st.write(f"**Sources:** {len(query_record['result'].get('sources', []))}")
 
+def check_vector_db_availability():
+    """Check which vector database backends are available and return status messages."""
+    messages = []
+    if QDRANT_AVAILABLE:
+        messages.append(("✅ Qdrant is available", "success"))
+    else:
+        messages.append(("❌ Qdrant is not available", "warning"))
+    
+    if CHROMA_AVAILABLE:
+        messages.append(("✅ ChromaDB is available", "success"))
+    else:
+        messages.append(("❌ ChromaDB is not available", "warning"))
+    
+    messages.append(("✅ SimpleVectorStore fallback is always available", "success"))
+    
+    return messages
+
+def render_main():
+    """Render the main content area."""
+    st.title(config_manager.config.ui_title)
+    st.markdown(config_manager.config.ui_description)
+    
+    # Quick initialization option
+    if not st.session_state.initialized:
+        st.warning("System is not fully initialized. You can initialize step by step using the sidebar controls, or use the quick start option below.")
+        
+        if st.button("🚀 Quick Start (Load Data and Initialize All Components)"):
+            with st.spinner("Loading data and initializing components..."):
+                # Load data
+                df = load_data()
+                if len(df) > 0:
+                    # Build knowledge graph
+                    knowledge_graph = build_knowledge_graph()
+                    if knowledge_graph:
+                        # Initialize vector store
+                        vector_store = initialize_vector_store()
+                        if vector_store:
+                            # Initialize GraphRAG
+                            initialize_graphrag()
+    
+    # Query interface (only show when initialized)
+    if st.session_state.initialized:
+        st.header("Ask a Question")
+        query = st.text_input("Enter your question about parliamentary proceedings:")
+        
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            if st.button("Submit Query"):
+                if query:
+                    with st.spinner("Processing query..."):
+                        result = process_query(query, st.session_state.retrieval_mode)
+                        st.session_state.answer = result["answer"]
+                        st.session_state.results = result["results"]
+                        st.session_state.prompt = result["prompt"]
+        
+        with col2:
+            st.info(f"Using {st.session_state.retrieval_mode} retrieval mode with {st.session_state.storage_backend} for vector storage.")
+        
+        # Display answer
+        if st.session_state.answer:
+            st.header("Answer")
+            st.markdown(st.session_state.answer)
+            
+            # Display retrieved documents
+            if st.session_state.results:
+                with st.expander("View Retrieved Documents"):
+                    for i, doc in enumerate(st.session_state.results):
+                        st.markdown(f"**Document {i+1}**")
+                        content = doc.get('payload', {}).get('Content', '')
+                        date = doc.get('payload', {}).get('Date', 'Unknown date')
+                        speaker = doc.get('payload', {}).get('Speaker', 'Unknown speaker')
+                        source = doc.get('source', 'unknown')
+                        score = doc.get('score', 0.0)
+                        
+                        st.markdown(f"**Date:** {date}")
+                        st.markdown(f"**Speaker:** {speaker}")
+                        st.markdown(f"**Content:** {content}")
+                        st.markdown(f"**Source:** {source}")
+                        st.markdown(f"**Relevance Score:** {score:.4f}")
+                        st.markdown("---")
+    
+    # Data visualization (available after loading)
+    if st.session_state.loading_complete:
+        st.header("Data Exploration")
+        
+        tab1, tab2 = st.tabs(["Parliamentary Data", "Knowledge Graph"])
+        
+        with tab1:
+            if st.session_state.df is not None:
+                st.write(f"Total statements: {len(st.session_state.df)}")
+                st.dataframe(st.session_state.df)
+        
+        with tab2:
+            if st.session_state.graph_built:
+                render_graph_section()
+            else:
+                st.warning("Knowledge graph not built yet. Use the sidebar to build it.")
+
+# Main app
 def main():
-    """Main application function."""
-    # Render sidebar and get settings
-    settings = render_sidebar()
-    
-    # Main content
-    tab1, tab2, tab3 = st.tabs(["GraphRAG Query", "Knowledge Graph", "Data Explorer"])
-    
-    with tab1:
-        if settings:
-            render_query_section(settings)
-    
-    with tab2:
-        render_graph_section()
-    
-    with tab3:
-        render_data_explorer()
+    render_sidebar()
+    render_main()
 
 if __name__ == "__main__":
     main() 

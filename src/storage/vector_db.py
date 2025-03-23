@@ -2,8 +2,8 @@
 Vector storage module for Parliamentary Meeting Analyzer.
 
 This module provides functionality for storing and retrieving
-vector embeddings for parliamentary data using either Qdrant
-or ChromaDB as a fallback.
+vector embeddings for parliamentary data using either Qdrant,
+ChromaDB, or a simple in-memory fallback.
 """
 
 import os
@@ -11,10 +11,11 @@ import time
 import uuid
 import json
 import pandas as pd
+import numpy as np
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union, Tuple
 
-from src.utils.logging import logger, log_inference
+from src.utils.logging import logger
 from src.utils.config import config_manager
 from src.services.ollama import OllamaService
 
@@ -25,7 +26,7 @@ try:
     from qdrant_client.http.exceptions import UnexpectedResponse
     QDRANT_AVAILABLE = True
 except ImportError:
-    logger.warning("Qdrant client is not available. Will use ChromaDB as fallback.")
+    logger.warning("Qdrant client is not available. Will use fallback.")
     QDRANT_AVAILABLE = False
 
 # Try to import ChromaDB
@@ -34,11 +35,56 @@ try:
     from chromadb.utils import embedding_functions
     CHROMA_AVAILABLE = True
 except ImportError:
-    logger.warning("ChromaDB is not available. Install it with 'pip install chromadb'")
+    logger.warning("ChromaDB is not available. Will use simple in-memory fallback.")
     CHROMA_AVAILABLE = False
 
+# Simple utility function for cosine similarity
+def cosine_similarity(a, b):
+    """Calculate cosine similarity between two vectors."""
+    dot_product = np.dot(a, b)
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    return dot_product / (norm_a * norm_b)
+
+class SimpleVectorStore:
+    """Simple in-memory vector store for development and testing."""
+    
+    def __init__(self):
+        """Initialize the simple vector store."""
+        self.documents = []
+        self.vectors = []
+        self.metadatas = []
+        
+    def add(self, documents, vectors, metadatas):
+        """Add documents with vectors and metadata."""
+        self.documents.extend(documents)
+        self.vectors.extend(vectors)
+        self.metadatas.extend(metadatas)
+        return len(self.documents)
+    
+    def search(self, query_vector, top_k=5):
+        """Search for similar documents."""
+        if not self.vectors:
+            return []
+        
+        # Calculate similarities
+        similarities = [cosine_similarity(query_vector, vec) for vec in self.vectors]
+        
+        # Get indices of top_k results
+        indices = np.argsort(similarities)[-top_k:][::-1]
+        
+        # Format results
+        results = []
+        for i, idx in enumerate(indices):
+            results.append({
+                "score": similarities[idx],
+                "payload": self.metadatas[idx]
+            })
+            
+        return results
+
 class VectorStore:
-    """Vector storage for parliamentary data using Qdrant or ChromaDB."""
+    """Vector storage for parliamentary data using Qdrant, ChromaDB, or simple fallback."""
     
     def __init__(
         self,
@@ -77,16 +123,18 @@ class VectorStore:
         # Initialize vector store client
         self.client = None
         self.chroma_client = None
+        self.simple_store = None
         self.collection = None
         self.using_qdrant = False
         self.using_chroma = False
+        self.using_simple = False
         
         # Try to initialize Qdrant first if requested
         if use_qdrant and QDRANT_AVAILABLE:
             try:
                 self._init_qdrant()
             except Exception as e:
-                logger.warning(f"Failed to initialize Qdrant: {str(e)}. Falling back to ChromaDB.")
+                logger.warning(f"Failed to initialize Qdrant: {str(e)}. Trying fallback.")
                 use_qdrant = False
         
         # Fall back to ChromaDB if Qdrant is not available or initialization failed
@@ -94,16 +142,13 @@ class VectorStore:
             try:
                 self._init_chromadb()
             except Exception as e:
-                logger.error(f"Failed to initialize ChromaDB: {str(e)}")
-                raise RuntimeError("Failed to initialize any vector store backend") from e
-        
-        if not self.using_qdrant and not self.using_chroma:
-            logger.error("No vector database backend is available")
-            raise RuntimeError(
-                "No vector database backend is available. Install either qdrant-client or chromadb."
-            )
+                logger.warning(f"Failed to initialize ChromaDB: {str(e)}. Using simple fallback.")
+                self._init_simple_store()
+        elif not use_qdrant and not CHROMA_AVAILABLE:
+            # Use simple in-memory fallback
+            self._init_simple_store()
             
-        logger.info(f"Initialized VectorStore with {'Qdrant' if self.using_qdrant else 'ChromaDB'}")
+        logger.info(f"Initialized VectorStore with {'Qdrant' if self.using_qdrant else 'ChromaDB' if self.using_chroma else 'Simple in-memory fallback'}")
     
     def _init_qdrant(self):
         """Initialize Qdrant client."""
@@ -173,6 +218,12 @@ class VectorStore:
         
         self.using_chroma = True
     
+    def _init_simple_store(self):
+        """Initialize simple in-memory vector store."""
+        self.simple_store = SimpleVectorStore()
+        logger.info("Initialized simple in-memory vector store as fallback")
+        self.using_simple = True
+    
     def _get_chroma_embedding_function(self):
         """Get embedding function for ChromaDB."""
         # Define a custom embedding function that uses our Ollama service
@@ -184,7 +235,7 @@ class VectorStore:
             def __call__(self, texts):
                 embeddings = []
                 for text in texts:
-                    embedding = self.ollama_service.generate_embedding(text)
+                    embedding = self.ollama_service.get_embeddings(text)
                     embeddings.append(embedding)
                 return embeddings
         
@@ -207,6 +258,8 @@ class VectorStore:
             return self._store_qdrant(data)
         elif self.using_chroma:
             return self._store_chromadb(data)
+        elif self.using_simple:
+            return self._store_simple(data)
         else:
             logger.error("No vector database backend available")
             return False
@@ -225,7 +278,7 @@ class VectorStore:
                 for _, row in batch.iterrows():
                     # Generate embedding for content
                     content = row["Content"]
-                    embedding = self.ollama_service.generate_embedding(content)
+                    embedding = self.ollama_service.get_embeddings(content)
                     
                     # Create point
                     point_id = str(uuid.uuid4())
@@ -306,6 +359,40 @@ class VectorStore:
             logger.error(f"Error storing data in ChromaDB: {str(e)}")
             return False
     
+    def _store_simple(self, data: pd.DataFrame) -> bool:
+        """Store data in simple in-memory store."""
+        try:
+            documents = []
+            vectors = []
+            metadatas = []
+            
+            for _, row in data.iterrows():
+                # Get content
+                content = row["Content"]
+                
+                # Generate embedding
+                embedding = self.ollama_service.get_embeddings(content)
+                
+                # Create unique ID
+                point_id = str(uuid.uuid4())
+                
+                # Create metadata with all row data
+                metadata = {col: str(row[col]) for col in row.index}
+                metadata["entry_id"] = point_id
+                
+                documents.append(content)
+                vectors.append(embedding)
+                metadatas.append(metadata)
+            
+            # Add to simple store
+            count = self.simple_store.add(documents, vectors, metadatas)
+            logger.info(f"Successfully stored {count} embeddings in simple in-memory store")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error storing data in simple store: {str(e)}")
+            return False
+    
     def search_similar(
         self, 
         query_text: str, 
@@ -330,6 +417,8 @@ class VectorStore:
             return self._search_qdrant(query_text, top_k, score_threshold)
         elif self.using_chroma:
             return self._search_chromadb(query_text, top_k)
+        elif self.using_simple:
+            return self._search_simple(query_text, top_k)
         else:
             logger.error("No vector database backend available")
             return []
@@ -343,7 +432,7 @@ class VectorStore:
         """Search for similar content in Qdrant."""
         try:
             # Generate embedding for query
-            query_embedding = self.ollama_service.generate_embedding(query_text)
+            query_embedding = self.ollama_service.get_embeddings(query_text)
             
             # Search
             search_result = self.client.search(
@@ -394,6 +483,26 @@ class VectorStore:
             
         except Exception as e:
             logger.error(f"Error searching in ChromaDB: {str(e)}")
+            return []
+    
+    def _search_simple(
+        self, 
+        query_text: str, 
+        top_k: int = 5
+    ) -> List[Dict[str, Any]]:
+        """Search for similar content in simple in-memory store."""
+        try:
+            # Generate embedding for query
+            query_embedding = self.ollama_service.get_embeddings(query_text)
+            
+            # Search
+            search_result = self.simple_store.search(query_embedding, top_k=top_k)
+            
+            logger.info(f"Found {len(search_result)} similar items for query: '{query_text[:50]}...'")
+            return search_result
+            
+        except Exception as e:
+            logger.error(f"Error searching in simple store: {str(e)}")
             return []
 
 # Usage example:

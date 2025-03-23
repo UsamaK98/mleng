@@ -10,6 +10,7 @@ This system provides AI-powered analysis of parliamentary meeting minutes using 
 - Vector embeddings for semantic search
 - GraphRAG query processing combining graph and vector search
 - Interactive web interface with Streamlit
+- Fallback mode with ChromaDB when Qdrant is not available
 
 ## Setup
 
@@ -96,6 +97,23 @@ Then open your browser to the URL displayed in the console (typically http://loc
 - `src/web/`: Streamlit web application
 - `src/demo/`: Demo scripts
 
+## Vector Storage
+
+The system supports two vector storage backends:
+
+1. **Qdrant** (default): A high-performance vector database
+2. **ChromaDB** (fallback): Used automatically when Qdrant is not available or connection fails
+
+To use ChromaDB explicitly, initialize the VectorStore with `use_qdrant=False`:
+
+```python
+vector_store = VectorStore(
+    collection_name="my_collection",
+    ollama_service=ollama_service,
+    use_qdrant=False  # Force ChromaDB usage
+)
+```
+
 ## Troubleshooting
 
 ### Ollama Service Issues
@@ -105,6 +123,14 @@ If you encounter errors related to the Ollama service:
 1. Ensure Ollama is installed and running
 2. Check that you have pulled the required model (`ollama pull llama3`)
 3. The application will attempt to initialize the Ollama service automatically if not provided
+
+### Vector Database Issues
+
+If you encounter errors with Qdrant:
+
+1. The system will automatically fall back to ChromaDB if Qdrant is not available
+2. You can test vector storage connectivity with `python src/test_vector_store.py`
+3. For better performance with local development, ChromaDB is a good alternative to Qdrant
 
 ### Embedding Dimensions
 
