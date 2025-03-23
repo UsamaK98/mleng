@@ -34,6 +34,7 @@ logs/
 .vscode/
 *.swp
 *.swo
+.cursor/
 
 # OS specific files
 .DS_Store
@@ -56,7 +57,21 @@ Thumbs.db
 temp/
 tmp/
 
-# Test files
-tests/
-src/test_*.py
-**/test_*.py 
+# Test files (don't exclude these anymore)
+# tests/
+# src/test_*.py
+# **/test_*.py
+
+# Cache directories
+cache/
+**/cache/
+processed_data/
+**/ner_cache/
+**/vector_cache/
+**/graphrag_cache/
+**/graph_cache/
+**/chromadb_data/
+**/qdrant_data/
+
+# Original project files
+project-info/ 
