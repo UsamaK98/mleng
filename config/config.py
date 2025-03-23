@@ -25,6 +25,7 @@ VECTOR_SIZE = 384
 # Ollama settings
 OLLAMA_BASE_URL = "http://localhost:11434"
 OLLAMA_MODEL = "gemma3:12b"
+OLLAMA_EMBED_MODEL = "nomic-embed-text:latest"
 
 # Database settings
 POSTGRES_HOST = "localhost"

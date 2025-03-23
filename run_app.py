@@ -7,14 +7,13 @@ and provides a unified interface for running all components of the system.
 Features:
 - Dependency checking (Qdrant, Ollama, data files)
 - Data ingestion with vector database setup
+- Support for Ollama embeddings with nomic-embed-text
 - API server initialization
-- UI server startup with interactive interface
-- Advanced analytics for parliamentary data:
-  - Speaker analysis and comparison
-  - Session analysis and timeline
-  - Relationship mapping between speakers
-  - Sentiment analysis of parliamentary discourse
-- Hybrid search capability (dense + sparse retrieval) for improved results
+- Simplified UI with interactive components:
+  - Quick access buttons for speaker information
+  - Topic exploration interface
+  - Session browsing and analysis
+  - Parliamentary analytics dashboard
 """
 import argparse
 import os
@@ -28,7 +27,7 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Import configuration
-from config.config import API_PORT, UI_PORT, API_HOST, QDRANT_HOST, QDRANT_PORT, OLLAMA_BASE_URL
+from config.config import API_PORT, UI_PORT, API_HOST, QDRANT_HOST, QDRANT_PORT, OLLAMA_BASE_URL, OLLAMA_EMBED_MODEL
 
 
 def check_qdrant():
@@ -47,17 +46,27 @@ def check_qdrant():
 
 
 def check_ollama():
-    """Check if Ollama is running"""
+    """Check if Ollama is running and required models are available"""
     try:
         response = requests.get(f"{OLLAMA_BASE_URL}/api/tags")
         if response.status_code == 200:
             print("✅ Ollama is running")
             models = response.json().get("models", [])
+            
+            # Check for mistral model
             mistral_available = any("mistral" in model.get("name", "").lower() for model in models)
             if mistral_available:
                 print("✅ Mistral model is available")
             else:
                 print("⚠️ Mistral model not found. You may need to run: docker exec ollama ollama pull mistral")
+            
+            # Check for nomic-embed-text model
+            nomic_available = any(OLLAMA_EMBED_MODEL.lower() in model.get("name", "").lower() for model in models)
+            if nomic_available:
+                print(f"✅ {OLLAMA_EMBED_MODEL} model is available")
+            else:
+                print(f"⚠️ {OLLAMA_EMBED_MODEL} model not found. You may need to run: docker exec ollama ollama pull {OLLAMA_EMBED_MODEL}")
+            
             return True
         else:
             print("❌ Ollama is not responding correctly")
@@ -82,12 +91,15 @@ def check_data_files():
         return False
 
 
-def run_data_ingestion(force_recreate=False):
+def run_data_ingestion(force_recreate=False, use_ollama_embeddings=False):
     """Run data ingestion process"""
     from src.data.ingestion import ingest_minutes
     
     print("\n🔄 Starting data ingestion process...")
-    result = ingest_minutes(force_recreate=force_recreate)
+    if use_ollama_embeddings:
+        print(f"🔤 Using Ollama embeddings with {OLLAMA_EMBED_MODEL} model")
+    
+    result = ingest_minutes(force_recreate=force_recreate, use_ollama_embeddings=use_ollama_embeddings)
     print(f"Data ingestion complete: {result}")
 
 
@@ -141,7 +153,7 @@ def start_ui_server():
 def parse_args():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(
-        description="Parliamentary Minutes Agentic Chatbot Runner - With advanced analytics and hybrid search",
+        description="Parliamentary Minutes Agentic Chatbot Runner - With simplified UI and enhanced embeddings",
         formatter_class=argparse.RawTextHelpFormatter
     )
     
@@ -150,6 +162,9 @@ def parse_args():
     
     parser.add_argument('--force-recreate', action='store_true',
                         help='Force recreation of collections during ingestion')
+    
+    parser.add_argument('--use-ollama-embeddings', action='store_true',
+                        help=f'Use Ollama embeddings with {OLLAMA_EMBED_MODEL} model')
     
     parser.add_argument('--api-only', action='store_true',
                         help='Run only the API server without the UI')
@@ -163,18 +178,19 @@ def parse_args():
     # Add a help epilog with more information
     parser.epilog = """
 Examples:
-  python run_app.py                   # Start both API and UI with all checks
-  python run_app.py --ingest          # Ingest data and then start services
-  python run_app.py --api-only        # Start only the API server
-  python run_app.py --ui-only         # Start only the UI server
+  python run_app.py                               # Start both API and UI with all checks
+  python run_app.py --ingest                      # Ingest data and then start services
+  python run_app.py --ingest --use-ollama-embeddings  # Ingest data using Ollama embeddings
+  python run_app.py --api-only                    # Start only the API server
+  python run_app.py --ui-only                     # Start only the UI server
   
 Features:
   - RAG-based parliamentary minutes querying
-  - Hybrid search combining vector and keyword search
-  - Speaker analytics and comparison
-  - Session analysis across time
-  - Relationship mapping between speakers
-  - Sentiment analysis of parliamentary discourse
+  - Enhanced embeddings with Ollama integration
+  - Speaker information via interactive buttons
+  - Topic exploration interface
+  - Session browsing and analysis
+  - Parliamentary analytics dashboard
     """
     
     return parser.parse_args()
@@ -203,12 +219,21 @@ def main():
             if choice in ['y', 'yes']:
                 parser.ingest = True
                 parser.force_recreate = True
+                
+                # Ask if they want to use ollama embeddings
+                print("\n⚠️ Would you like to use Ollama embeddings with nomic-embed-text? (y/n)")
+                choice = input().lower()
+                if choice in ['y', 'yes']:
+                    parser.use_ollama_embeddings = True
             else:
                 print("⚠️ Proceeding without data ingestion. The application may not work correctly.")
     
     # Run data ingestion if requested
     if parser.ingest:
-        run_data_ingestion(force_recreate=parser.force_recreate)
+        run_data_ingestion(
+            force_recreate=parser.force_recreate,
+            use_ollama_embeddings=parser.use_ollama_embeddings
+        )
     
     # Start the API server if running API-only or full app
     api_process = None

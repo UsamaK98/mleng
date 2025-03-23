@@ -7,23 +7,32 @@ from tqdm import tqdm
 
 from src.data.data_loader import MinutesDataLoader
 from src.utils.text_chunker import TextChunker
-from src.models.embeddings import EmbeddingModel
+from src.models.embeddings import EmbeddingModel, OllamaEmbeddingModel
 from src.database.vector_store import VectorStore
 
 
-def ingest_minutes(force_recreate: bool = False):
+def ingest_minutes(force_recreate: bool = False, use_ollama_embeddings: bool = False):
     """
     Main ingestion function
     
     Args:
         force_recreate: If True, recreate the vector collection even if it exists
+        use_ollama_embeddings: If True, use Ollama embedding model instead of SentenceTransformers
     """
     print("Starting data ingestion process...")
     
     # Initialize components
     data_loader = MinutesDataLoader()
     chunker = TextChunker()
-    embedding_model = EmbeddingModel()
+    
+    # Select the embedding model based on configuration
+    if use_ollama_embeddings:
+        print("Using Ollama for embeddings (nomic-embed-text)...")
+        embedding_model = OllamaEmbeddingModel()
+    else:
+        print("Using SentenceTransformers for embeddings...")
+        embedding_model = EmbeddingModel()
+        
     vector_store = VectorStore()
     
     # If force_recreate is True, recreate the collection
@@ -80,6 +89,7 @@ def ingest_minutes(force_recreate: bool = False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest parliamentary minutes data into vector database")
     parser.add_argument("--force", action="store_true", help="Force recreate vector collection")
+    parser.add_argument("--ollama", action="store_true", help="Use Ollama embedding model (nomic-embed-text)")
     args = parser.parse_args()
     
-    ingest_minutes(force_recreate=args.force) 
+    ingest_minutes(force_recreate=args.force, use_ollama_embeddings=args.ollama) 
