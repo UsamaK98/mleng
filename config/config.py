@@ -24,7 +24,7 @@ VECTOR_SIZE = 384
 
 # Ollama settings
 OLLAMA_BASE_URL = "http://localhost:11434"
-OLLAMA_MODEL = "mistral:7b-instruct"  # Updated to use specific Ollama model tag
+OLLAMA_MODEL = "gemma3:12b"
 
 # Database settings
 POSTGRES_HOST = "localhost"
@@ -47,8 +47,8 @@ MINUTES_CSV = os.path.join(OUTPUT_DIR, "parliamentary_minutes.csv")
 SPEAKERS_CSV = os.path.join(OUTPUT_DIR, "speakers_list.csv")
 
 # RAG settings
-MAX_DOCUMENTS_RETRIEVED = 5
-TEMPERATURE = 0.3
+MAX_DOCUMENTS_RETRIEVED = 7
+TEMPERATURE = 0.2
 SYSTEM_PROMPT = """
 You are an expert assistant specializing in Scottish Parliament meeting minutes.
 Your task is to provide accurate, factual responses based on the information in the meeting transcripts.

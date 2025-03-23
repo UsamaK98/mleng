@@ -15,7 +15,7 @@ An agentic chatbot system for interacting with parliamentary meeting minutes, en
          │                ┌─────────────────────┐             │
          └────────────────┤ Language Model      │─────────────┘
                           │ - Ollama (local)    │
-                          │ - GPU acceleration  │
+                          │ - nomic-embed-text  │
                           └─────────────────────┘
 ```
 
@@ -53,51 +53,59 @@ An agentic chatbot system for interacting with parliamentary meeting minutes, en
 - [x] Initial evaluation metrics
 
 ## Phase 3: Advanced Features
-- [ ] Implement hybrid search capabilities
-- [ ] Add speaker and topic analytics
-- [ ] Enable cross-session analysis
-- [ ] Develop relationship mapping between speakers
-- [ ] Add sentiment analysis for contributions
-- [ ] Enhance UI with visualizations
-- [ ] Create dynamic filtering capabilities
-- [ ] Optimize query performance
-- [ ] Implement GPU acceleration
+- [x] Implement hybrid search capabilities
+- [x] Add better error handling and suggestions for entity queries
+- [x] Add speaker and topic analytics
+- [x] Enable cross-session analysis
+- [x] Develop relationship mapping between speakers
+- [x] Add sentiment analysis for contributions
+- [x] Enhance UI with visualizations
+- [x] Create dynamic filtering capabilities
+- [ ] Optimize embedding generation with nomic-embed-text
+- [ ] Optimize query performance with caching
 
 **Deliverables:**
-- [ ] Enhanced search capabilities
-- [ ] Speaker and topic analytics features
-- [ ] Advanced UI with visualization components
-- [ ] Performance optimizations
+- [x] Enhanced search capabilities with hybrid retrieval
+- [x] Speaker and topic analytics features
+- [x] Advanced UI with visualization components
+- [x] Interactive visualizations for analytics data
+- [ ] Performance optimizations for production
 
-## Phase 4: Refinement
-- [ ] Collect and integrate user feedback
-- [ ] Improve response quality based on evaluations
-- [ ] Add more sophisticated prompt engineering
-- [ ] Optimize performance bottlenecks
-- [ ] Enhance error handling and logging
-- [ ] Create comprehensive documentation
-- [ ] Prepare final deployment package
+## Phase 4: Final Refinement (Current Phase)
+- [ ] UI Simplification and Enhancement
+  - [ ] Create informative landing page with dataset statistics
+  - [ ] Remove chat tab for more focused interaction
+  - [ ] Add topic and speaker buttons for direct querying
+  - [ ] Implement session search tab
+  - [ ] Streamline analytics interface
+- [ ] Performance Optimization
+  - [ ] Implement nomic-embed-text for better embeddings
+  - [ ] Add query caching for common queries
+  - [ ] Optimize vector search operations
 
 **Deliverables:**
-- [ ] Refined response generation
-- [ ] Performance optimizations
-- [ ] Comprehensive documentation
-- [ ] Production-ready deployment package
+- [ ] Simplified and intuitive UI focused on topic/speaker/session search
+- [ ] Informative landing page with dataset overview
+- [ ] Improved embedding quality with nomic-embed-text
+- [ ] Better performance through caching and optimizations
 
 ## Technology Stack
 - **Backend**: FastAPI, Python
 - **Vector Database**: Qdrant (running in Docker)
 - **LLM Provider**: Ollama (local deployment)
+- **Embedding Model**: nomic-embed-text (via Ollama)
 - **Frontend**: Streamlit
 - **Data Processing**: pandas, numpy, sentence-transformers
 - **Visualization**: matplotlib, plotly
+- **Analytics**: spaCy, TextBlob, networkx
+- **Environment**: Conda, Poetry
 - **Evaluation**: custom metrics for relevance and accuracy
 
 ## Timeline
-- Phase 1: 1-2 weeks
-- Phase 2: 2-3 weeks
-- Phase 3: 2-3 weeks
-- Phase 4: 1-2 weeks
+- Phase 1: Completed
+- Phase 2: Completed
+- Phase 3: Completed (80%)
+- Phase 4: Current focus (1-2 weeks)
 
 ## Evaluation Criteria
 - Query understanding accuracy

@@ -1,6 +1,20 @@
 """
-Improved runner script for the Parliamentary Minutes Agentic Chatbot
-This script ensures the backend is properly initialized before starting the frontend
+Parliamentary Minutes Agentic Chatbot Runner Script
+
+This script ensures the backend is properly initialized before starting the frontend,
+and provides a unified interface for running all components of the system.
+
+Features:
+- Dependency checking (Qdrant, Ollama, data files)
+- Data ingestion with vector database setup
+- API server initialization
+- UI server startup with interactive interface
+- Advanced analytics for parliamentary data:
+  - Speaker analysis and comparison
+  - Session analysis and timeline
+  - Relationship mapping between speakers
+  - Sentiment analysis of parliamentary discourse
+- Hybrid search capability (dense + sparse retrieval) for improved results
 """
 import argparse
 import os
@@ -13,6 +27,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Import configuration
 from config.config import API_PORT, UI_PORT, API_HOST, QDRANT_HOST, QDRANT_PORT, OLLAMA_BASE_URL
 
 
@@ -123,18 +138,54 @@ def start_ui_server():
     ])
 
 
+def parse_args():
+    """Parse command-line arguments"""
+    parser = argparse.ArgumentParser(
+        description="Parliamentary Minutes Agentic Chatbot Runner - With advanced analytics and hybrid search",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    
+    parser.add_argument('--ingest', action='store_true', 
+                        help='Run data ingestion to populate the vector database')
+    
+    parser.add_argument('--force-recreate', action='store_true',
+                        help='Force recreation of collections during ingestion')
+    
+    parser.add_argument('--api-only', action='store_true',
+                        help='Run only the API server without the UI')
+    
+    parser.add_argument('--ui-only', action='store_true',
+                        help='Run only the UI server without the API (assumes API is running elsewhere)')
+    
+    parser.add_argument('--skip-checks', action='store_true',
+                        help='Skip dependency and data checks (use with caution)')
+    
+    # Add a help epilog with more information
+    parser.epilog = """
+Examples:
+  python run_app.py                   # Start both API and UI with all checks
+  python run_app.py --ingest          # Ingest data and then start services
+  python run_app.py --api-only        # Start only the API server
+  python run_app.py --ui-only         # Start only the UI server
+  
+Features:
+  - RAG-based parliamentary minutes querying
+  - Hybrid search combining vector and keyword search
+  - Speaker analytics and comparison
+  - Session analysis across time
+  - Relationship mapping between speakers
+  - Sentiment analysis of parliamentary discourse
+    """
+    
+    return parser.parse_args()
+
+
 def main():
     """Main entry point with improved initialization sequence"""
-    parser = argparse.ArgumentParser(description="Parliamentary Minutes Agentic Chatbot")
-    parser.add_argument("--ingest", action="store_true", help="Run data ingestion")
-    parser.add_argument("--force-recreate", action="store_true", help="Force recreate vector store during ingestion")
-    parser.add_argument("--api-only", action="store_true", help="Run only the API server")
-    parser.add_argument("--ui-only", action="store_true", help="Run only the UI server")
-    parser.add_argument("--skip-checks", action="store_true", help="Skip dependency checks")
-    args = parser.parse_args()
+    parser = parse_args()
     
     # Check dependencies unless skipped
-    if not args.skip_checks:
+    if not parser.skip_checks:
         print("\n🔍 Checking dependencies...")
         qdrant_ok = check_qdrant()
         ollama_ok = check_ollama()
@@ -146,26 +197,26 @@ def main():
         
         # Check if data files exist
         data_exists = check_data_files()
-        if not data_exists and not args.ingest:
+        if not data_exists and not parser.ingest:
             print("\n⚠️ Data files are missing. Would you like to run data ingestion? (y/n)")
             choice = input().lower()
             if choice in ['y', 'yes']:
-                args.ingest = True
-                args.force_recreate = True
+                parser.ingest = True
+                parser.force_recreate = True
             else:
                 print("⚠️ Proceeding without data ingestion. The application may not work correctly.")
     
     # Run data ingestion if requested
-    if args.ingest:
-        run_data_ingestion(force_recreate=args.force_recreate)
+    if parser.ingest:
+        run_data_ingestion(force_recreate=parser.force_recreate)
     
     # Start the API server if running API-only or full app
     api_process = None
-    if args.api_only or not args.ui_only:
-        api_process = start_api_server(wait_for_startup=not args.api_only)
+    if parser.api_only or not parser.ui_only:
+        api_process = start_api_server(wait_for_startup=not parser.api_only)
     
     # Start the UI server if running UI-only or full app
-    if args.ui_only or not args.api_only:
+    if parser.ui_only or not parser.api_only:
         try:
             start_ui_server()
         finally:

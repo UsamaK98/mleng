@@ -11,6 +11,8 @@ This project provides an intelligent interface to search, analyze, and extract i
 - **Topic exploration** to find discussions on specific subjects
 - **Document citations** linking responses to source material
 - **Interactive UI** for easy engagement with the data
+- **Advanced analytics** including sentiment analysis and relationship mapping
+- **Hybrid search** combining dense vector and sparse keyword search
 
 ## 🏗️ System Architecture
 
@@ -21,6 +23,7 @@ The system is built with a modular architecture, consisting of several key compo
 - **LLM Integration**: Connects to Ollama for generating responses
 - **API Layer**: FastAPI backend exposes endpoints for queries
 - **UI**: Streamlit frontend for user interaction
+- **Analytics Engine**: Provides insights on speakers, sessions, and sentiment
 
 ```
 ┌───────────────────┐     ┌─────────────────────┐     ┌──────────────────┐
@@ -35,12 +38,22 @@ The system is built with a modular architecture, consisting of several key compo
                           │ - Ollama (local)    │
                           │ - Mistral model     │
                           └─────────────────────┘
+                                    ▲
+                                    │
+                          ┌─────────────────────┐
+                          │  Analytics Engine   │
+                          │ - Speaker analysis  │
+                          │ - Session analysis  │
+                          │ - Sentiment analysis│
+                          └─────────────────────┘
 ```
 
 ## 📋 Prerequisites
 
 - **Python 3.9+**
 - **Docker** for running Qdrant and Ollama services
+- **Conda** (recommended) for managing dependencies
+- **Poetry** (optional) for alternative dependency management
 - **GPU recommended** for faster embedding generation and inference (but not required)
 
 ## 🚀 Getting Started
@@ -52,10 +65,38 @@ git clone https://github.com/yourusername/parliamentary-minutes-chatbot.git
 cd parliamentary-minutes-chatbot
 ```
 
-### 2. Install dependencies
+### 2. Set up the environment
+
+You can choose between Conda (recommended) or Poetry for managing your dependencies:
+
+#### Option A: Using Conda (Recommended)
 
 ```bash
-pip install -r requirements.txt
+# Create a new conda environment
+conda env create -f environment.yml
+
+# Activate the environment
+conda activate parlminutes
+
+# Install the spaCy model (if needed)
+python -m spacy download en_core_web_sm
+```
+
+#### Option B: Using Poetry
+
+```bash
+# Install Poetry if you don't have it
+# Windows: (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+# macOS/Linux: curl -sSL https://install.python-poetry.org | python3 -
+
+# Install dependencies
+poetry install
+
+# Activate the virtual environment
+poetry shell
+
+# Install the spaCy model (if needed)
+python -m spacy download en_core_web_sm
 ```
 
 ### 3. Run necessary Docker services
@@ -105,29 +146,59 @@ You can access the UI at http://localhost:8501 and the API at http://localhost:8
 
 The system provides the following API endpoints:
 
+### Main Endpoints
+
 - **POST /query**: Process general queries about parliamentary minutes
   ```json
   {
     "query": "What discussions took place about healthcare?",
-    "filters": {"date": "2024-06-26"}
+    "filters": {"date": "2024-06-26"},
+    "use_hybrid": true
   }
   ```
 
 - **POST /entity**: Process queries about specific entities (speakers)
   ```json
   {
-    "entity": "John Smith"
+    "entity": "John Smith",
+    "use_hybrid": true
   }
   ```
 
 - **POST /topic**: Process queries about specific topics
   ```json
   {
-    "topic": "education"
+    "topic": "education",
+    "use_hybrid": true
   }
   ```
 
 - **GET /metadata**: Retrieve metadata about the parliamentary minutes dataset
+
+### Analytics Endpoints
+
+#### Speaker Analytics
+- **GET /analytics/speakers**: Get top speakers by contribution count
+- **GET /analytics/speakers/{speaker_name}**: Get detailed statistics for a specific speaker
+- **GET /analytics/speakers/compare**: Compare two speakers (query params: speaker1, speaker2)
+
+#### Session Analytics
+- **GET /analytics/sessions**: Get timeline of all sessions with key metrics
+- **GET /analytics/sessions/{session_date}**: Get statistics for a specific session
+- **GET /analytics/sessions/compare**: Compare two sessions (query params: session1, session2)
+
+#### Relationship Analytics
+- **GET /analytics/relationships/network**: Get speaker interaction network
+- **GET /analytics/relationships/influencers**: Get key influencers in the speaker network
+- **GET /analytics/relationships/communities**: Get communities of speakers
+
+#### Sentiment Analytics
+- **GET /analytics/sentiment/overall**: Get overall sentiment statistics
+- **GET /analytics/sentiment/by-speaker**: Get sentiment analysis by speaker
+- **GET /analytics/sentiment/by-session**: Get sentiment trends across sessions
+- **GET /analytics/sentiment/outliers**: Find emotional outliers in contributions
+- **GET /analytics/sentiment/by-role**: Compare sentiment between different speaker roles
+- **GET /analytics/sentiment/keywords**: Get keywords associated with positive and negative sentiment
 
 ## 💡 Example Queries
 
@@ -146,6 +217,31 @@ The system provides the following API endpoints:
 - "What was said about climate change initiatives?"
 - "How did the parliament address budget concerns?"
 
+## 📊 Analytics Features
+
+The system includes several advanced analytics features:
+
+### Speaker Analytics
+- Track contribution patterns of individual speakers
+- Compare speaking styles, topics, and participation between speakers
+- Identify most active speakers and their areas of focus
+
+### Session Analytics
+- Analyze content and flow of individual parliamentary sessions
+- Track changes in discussion topics across sessions
+- Compare different sessions based on participants and topics
+
+### Relationship Mapping
+- Generate interaction networks between speakers
+- Identify key influencers in parliamentary discussions
+- Detect communities of speakers who frequently interact
+
+### Sentiment Analysis
+- Analyze emotional tone of parliamentary discourse
+- Track sentiment trends over time and by speaker
+- Identify keywords associated with positive and negative sentiment
+- Compare sentiment patterns between different roles and groups
+
 ## 📂 Project Structure
 
 ```
@@ -154,27 +250,38 @@ parliamentary-minutes-chatbot/
 ├── project-info/           
 │   └── data/               # Raw parliamentary minutes data
 ├── src/
+│   ├── analytics/          # Analytics modules
+│   │   ├── speaker_analysis.py     # Speaker analytics
+│   │   ├── session_analysis.py     # Session analysis
+│   │   ├── relationship_mapper.py  # Speaker relationship mapping
+│   │   └── sentiment_analyzer.py   # Sentiment analysis
 │   ├── api/                # FastAPI backend
+│   │   ├── app.py          # Main API server
+│   │   └── analytics_routes.py     # Analytics API endpoints
 │   ├── data/               # Data processing utilities
 │   ├── database/           # Vector database interface
 │   ├── models/             # LLM interface and embeddings
 │   ├── rag/                # RAG pipeline components
 │   └── ui/                 # Streamlit user interface
+├── tests/                  # Test suite
+│   ├── unit/               # Unit tests
+│   └── integration/        # Integration tests
 ├── output/                 # Processed data outputs
+├── environment.yml         # Conda environment definition
+├── pyproject.toml          # Poetry configuration
+├── .gitignore              # Git ignore file
 ├── README.md               # This file
-├── requirements.txt        # Python dependencies
-├── run.py                  # Original run script
-└── run_app.py              # Improved runner script
+└── run_app.py              # Main runner script
 ```
 
 ## 🔜 Future Improvements
 
-- **Hybrid search implementation** combining dense and sparse retrieval
-- **Relationship mapping** between speakers and topics
-- **Cross-session analysis** to track issues over time
-- **Sentiment analysis** for contributions
-- **UI enhancements** with more visualizations
-- **GPU optimization** for faster processing
+- **Multi-modal analysis** to include visual content from sessions
+- **Timeline visualization** to track issues over extended periods
+- **Speech pattern analysis** to identify rhetorical techniques
+- **Argument extraction** to map positions on key issues
+- **Enhanced relationship graphs** with interactive visualizations
+- **Policy impact analysis** to track how discussions influence outcomes
 
 ## 📝 License
 

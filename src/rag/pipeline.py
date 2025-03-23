@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional, List
 import json
 
 from src.rag.retriever import MinutesRetriever
+from src.rag.hybrid_retriever import HybridRetriever
 from src.rag.llm import LLMInterface
 from src.data.data_loader import MinutesDataLoader
 
@@ -17,7 +18,9 @@ class RAGPipeline:
         self,
         retriever: Optional[MinutesRetriever] = None,
         llm: Optional[LLMInterface] = None,
-        data_loader: Optional[MinutesDataLoader] = None
+        data_loader: Optional[MinutesDataLoader] = None,
+        use_hybrid_retrieval: bool = False,
+        hybrid_alpha: float = 0.5
     ):
         """
         Initialize the RAG pipeline
@@ -26,9 +29,9 @@ class RAGPipeline:
             retriever: Document retriever
             llm: Language model interface
             data_loader: Data loader for parliamentary minutes
+            use_hybrid_retrieval: Whether to use hybrid retrieval (dense + sparse)
+            hybrid_alpha: Weight for dense vs sparse results (higher = more weight to dense)
         """
-        self.retriever = retriever or MinutesRetriever()
-        self.llm = llm or LLMInterface()
         self.data_loader = data_loader or MinutesDataLoader()
         
         # Load data if not already loaded
@@ -36,6 +39,19 @@ class RAGPipeline:
             self.data_loader.load_data()
         except Exception as e:
             print(f"Warning: Could not load data: {e}")
+        
+        # Initialize retriever based on the retrieval mode
+        if use_hybrid_retrieval:
+            self.retriever = HybridRetriever(alpha=hybrid_alpha)
+            self.is_hybrid = True
+            print("Using hybrid retrieval (dense vector + sparse keyword search)")
+        else:
+            self.retriever = retriever or MinutesRetriever()
+            self.is_hybrid = False
+            print("Using standard dense vector retrieval")
+        
+        # Initialize LLM interface
+        self.llm = llm or LLMInterface()
     
     def process_query(
         self,
@@ -74,12 +90,14 @@ class RAGPipeline:
                         "speaker": r["metadata"]["speaker"],
                         "date": r["metadata"]["date"],
                         "timestamp": r["metadata"]["timestamp"],
-                        "relevance_score": r["score"]
+                        "relevance_score": r["score"],
+                        "retrieval_method": "hybrid" if self.is_hybrid else "dense"
                     }
                     for r in results
                 ],
                 "query": query,
-                "filters": filters or {}
+                "filters": filters or {},
+                "retrieval_method": "hybrid" if self.is_hybrid else "dense"
             }
         
         return response
@@ -103,10 +121,15 @@ class RAGPipeline:
             partial_matches = [s for s in speakers if entity.lower() in s.lower()]
             
             if not partial_matches:
+                # Get a list of available speakers to suggest
+                available_speakers = self.data_loader.get_speakers()[:5]  # Limit to 5 suggestions
+                
                 return {
-                    "answer": f"No information found for entity: {entity}",
+                    "answer": f"I don't have any information about '{entity}' in the parliamentary minutes. This speaker may not be present in the dataset. You could try searching for one of these speakers instead: {', '.join(available_speakers)}",
                     "entity": entity,
-                    "found": False
+                    "found": False,
+                    "retrieval_method": "hybrid" if self.is_hybrid else "dense",
+                    "available_speakers": available_speakers
                 }
             
             # Use the first partial match
@@ -139,7 +162,8 @@ class RAGPipeline:
             "speaker_stats": {
                 "total_words": speaker_info.get("Total_Words", 0),
                 "avg_words_per_contribution": speaker_info.get("Average_Words_Per_Contribution", 0)
-            }
+            },
+            "retrieval_method": "hybrid" if self.is_hybrid else "dense"
         }
         
         # For the first few contributions, get some examples
@@ -190,7 +214,8 @@ class RAGPipeline:
             return {
                 "answer": f"No information found about topic: {topic}",
                 "topic": topic,
-                "found": False
+                "found": False,
+                "retrieval_method": "hybrid" if self.is_hybrid else "dense"
             }
         
         # Format context
@@ -213,12 +238,14 @@ class RAGPipeline:
             "summary": summary,
             "speakers_discussing": speakers,
             "dates_discussed": sorted(dates),
+            "retrieval_method": "hybrid" if self.is_hybrid else "dense",
             "sources": [
                 {
                     "speaker": r["metadata"]["speaker"],
                     "date": r["metadata"]["date"],
                     "timestamp": r["metadata"]["timestamp"],
-                    "excerpt": r["text"][:150] + "..." if len(r["text"]) > 150 else r["text"]
+                    "excerpt": r["text"][:150] + "..." if len(r["text"]) > 150 else r["text"],
+                    "relevance_score": r["score"]
                 }
                 for r in results
             ]
