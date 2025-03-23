@@ -1,113 +1,138 @@
-# Parliamentary Minutes Agentic Chatbot: Implementation Plan
+# Parliamentary Meeting Analyzer Implementation Plan
 
 ## Project Overview
-An agentic chatbot system for interacting with parliamentary meeting minutes, enabling users to query by entity, topic, or other parameters and receive structured insights from the data.
+This document outlines the implementation plan for the Parliamentary Meeting Analyzer, which uses GraphRAG technology to allow users to query and analyze parliamentary meeting minutes. The system incorporates GLiNER for named entity recognition, Ollama for embedding generation and chat functionality, and presents a user-friendly interface via Streamlit.
 
-## System Architecture
-```
-┌───────────────────┐     ┌─────────────────────┐     ┌──────────────────┐
-│ User Interface    │     │  Retrieval System   │     │  Knowledge Base  │
-│ - FastAPI backend │────►│  - RAG pipeline     │────►│  - Qdrant        │
-│ - Streamlit UI    │     │  - Query processing │     │  - Postgres      │
-└───────────────────┘     └─────────────────────┘     └──────────────────┘
-         ▲                          │                          ▲
-         │                          ▼                          │
-         │                ┌─────────────────────┐             │
-         └────────────────┤ Language Model      │─────────────┘
-                          │ - Ollama (local)    │
-                          │ - nomic-embed-text  │
-                          └─────────────────────┘
-```
+## Phase 1: Infrastructure Setup
 
-## Phase 1: Foundation
-- [x] Analyze dataset and visualizations
-- [x] Set up project structure
-- [x] Configure environment and dependencies
-- [x] Implement data processing pipeline
-- [x] Create vector database schema
-- [x] Implement data loader for vector database
-- [x] Create utilities for text chunking and embedding generation
-- [x] Build initial query understanding module
+### 1. Project Structure (Estimated time: 1 day)
+- [x] Create main project directory
+- [ ] Set up required directories:
+  - `src/`: Source code
+  - `data/`: Data files (processed and raw)
+  - `models/`: For storing model configurations and metadata
+  - `logs/`: For application logs (added to .gitignore)
+  - `config/`: For configuration files
+  - `assets/`: For static files (images, CSS, etc.)
+  - `app/`: Streamlit application files
 
-**Deliverables:**
-- [x] Project structure with necessary modules
-- [x] Environment configuration
-- [x] Data processing utilities
-- [x] Vector database configuration and initial data loading
+### 2. Environment Setup (Estimated time: 0.5 day)
+- [ ] Create requirements.txt with necessary dependencies
+- [ ] Create .gitignore file (include logs directory)
+- [ ] Set up virtual environment
+- [ ] Document environment setup process
 
-## Phase 2: Core Functionality
-- [x] Implement RAG pipeline
-- [x] Configure Ollama integration
-- [x] Create prompt templates for different query types
-- [x] Build FastAPI endpoints
-- [x] Implement basic query routing logic
-- [x] Create response formatter
-- [x] Develop basic Streamlit interface
-- [x] Add simple query input and response display
-- [x] Create evaluation metrics for response quality
+### 3. Ollama Interface (Estimated time: 1 day)
+- [ ] Create a standardized Ollama interface class in `src/services/ollama.py`
+- [ ] Implement methods for:
+  - Text embedding generation
+  - Chat completion with qwq model
+  - Parameter handling (temperature, top_k, etc.)
+- [ ] Add error handling and connection management
+- [ ] Write docstrings and usage examples
 
-**Deliverables:**
-- [x] Working FastAPI backend with RAG capabilities
-- [x] Basic Streamlit frontend for queries
-- [x] Functional end-to-end query-response system
-- [x] Initial evaluation metrics
+### 4. Logging System (Estimated time: 0.5 day)
+- [ ] Create logging module in `src/utils/logging.py`
+- [ ] Implement structured logging for:
+  - Model interactions
+  - Query processing
+  - Error handling
+  - Performance metrics
+- [ ] Configure log rotation and format
+- [ ] Ensure logs are saved to the logs directory
 
-## Phase 3: Advanced Features
-- [x] Implement hybrid search capabilities
-- [x] Add better error handling and suggestions for entity queries
-- [x] Add speaker and topic analytics
-- [x] Enable cross-session analysis
-- [x] Develop relationship mapping between speakers
-- [x] Add sentiment analysis for contributions
-- [x] Enhance UI with visualizations
-- [x] Create dynamic filtering capabilities
-- [x] Optimize embedding generation with nomic-embed-text
+### 5. Configuration System (Estimated time: 1 day)
+- [ ] Create configuration module in `src/utils/config.py`
+- [ ] Define default configurations for:
+  - Ollama model parameters (chat, embedding)
+  - GLiNER parameters
+  - GraphRAG parameters
+  - Application settings
+- [ ] Implement configuration loading and saving
+- [ ] Create utility functions for accessing configuration
 
-**Deliverables:**
-- [x] Enhanced search capabilities with hybrid retrieval
-- [x] Speaker and topic analytics features
-- [x] Advanced UI with visualization components
-- [x] Interactive visualizations for analytics data
-- [x] Integration with nomic-embed-text for better embeddings
+## Phase 2: Data Processing
 
-## Phase 4: Final Refinement (Completed)
-- [x] UI Simplification and Enhancement
-  - [x] Create informative landing page with dataset statistics
-  - [x] Remove chat tab for more focused interaction
-  - [x] Add topic and speaker buttons for direct querying
-  - [x] Implement session search tab
-  - [x] Streamline analytics interface
-- [x] Performance Optimization
-  - [x] Implement nomic-embed-text for better embeddings
-  - [ ] Optimize vector search operations
+### 1. Data Loading (Estimated time: 0.5 day)
+- [ ] Create data loading module in `src/data/loader.py`
+- [ ] Implement functions to read from CSV files:
+  - parliamentary_minutes.csv
+  - speakers_list.csv
+- [ ] Create data models/schema for loaded data
+- [ ] Add data validation and cleaning
 
-**Deliverables:**
-- [x] Simplified and intuitive UI focused on topic/speaker/session search
-- [x] Informative landing page with dataset overview
-- [x] Improved embedding quality with nomic-embed-text
-- [x] Better performance through optimizations
+### 2. GLiNER Integration (Estimated time: 1 day)
+- [ ] Create NER module in `src/models/ner.py`
+- [ ] Implement GLiNER model integration
+- [ ] Define entity types relevant to parliamentary data:
+  - People (MPs, witnesses)
+  - Organizations
+  - Locations
+  - Legislation
+  - Topics/Themes
+  - Dates/Times
+- [ ] Create entity extraction pipeline
+- [ ] Implement caching for performance
 
-## Technology Stack
-- **Backend**: FastAPI, Python
-- **Vector Database**: Qdrant (running in Docker)
-- **LLM Provider**: Ollama (local deployment)
-- **Embedding Model**: nomic-embed-text (via Ollama)
-- **Frontend**: Streamlit
-- **Data Processing**: pandas, numpy, sentence-transformers
-- **Visualization**: matplotlib, plotly
-- **Analytics**: spaCy, TextBlob, networkx
-- **Environment**: Conda, Poetry
-- **Evaluation**: custom metrics for relevance and accuracy
+### 3. Entity Relationship Extraction (Estimated time: 1.5 days)
+- [ ] Create relationship extraction module in `src/models/relationship.py`
+- [ ] Define relationship types:
+  - Speaker-to-Topic
+  - Speaker-to-Speaker (responses)
+  - Speaker-to-Organization
+  - Topic-to-Legislation
+- [ ] Implement rule-based relationship extraction
+- [ ] Enhance with Ollama-based extraction for complex relationships
+- [ ] Create visualization helpers for relationships
 
-## Timeline
-- Phase 1: Completed
-- Phase 2: Completed
-- Phase 3: Completed
-- Phase 4: Completed
+### 4. Knowledge Graph Construction (Estimated time: 1.5 days)
+- [ ] Create graph module in `src/models/graph.py`
+- [ ] Implement NetworkX-based graph construction
+- [ ] Define node and edge schema
+- [ ] Create functions for:
+  - Adding entity nodes
+  - Adding relationship edges
+  - Graph querying
+  - Graph serialization/deserialization
+- [ ] Implement community detection
 
-## Evaluation Criteria
-- Query understanding accuracy
-- Response relevance and accuracy
-- Response generation time
-- User satisfaction
-- Resource utilization 
+### 5. Vector Storage (Estimated time: 1 day)
+- [ ] Create vector database module in `src/storage/vector_db.py`
+- [ ] Implement Qdrant integration
+- [ ] Create embedding generation pipeline using Ollama
+- [ ] Define collection schema for different entity types
+- [ ] Implement search and retrieval functions
+
+### 6. GraphRAG Implementation (Estimated time: 2 days)
+- [ ] Create GraphRAG module in `src/models/graphrag.py`
+- [ ] Implement core GraphRAG functionality following Microsoft's approach
+- [ ] Create query analyzer and decomposer
+- [ ] Implement hybrid retrieval combining:
+  - Graph traversal
+  - Vector similarity
+- [ ] Create context merging mechanism
+- [ ] Optimize for GPU usage
+
+## Expected Deliverables for Phases 1-2
+- Fully functional backend infrastructure
+- Entity extraction and relationship identification system
+- Knowledge graph with parliamentary meeting data
+- Vector embeddings stored in Qdrant
+- GraphRAG query system ready for integration with UI
+
+## Dependencies
+- Python 3.10+
+- Streamlit
+- FastAPI
+- GLiNER
+- Ollama
+- NetworkX
+- Qdrant client
+- Pandas
+- PyTorch (GPU-enabled)
+
+## Next Steps
+After completion of Phases 1-2, we will proceed with:
+- Phase 3: Streamlit UI Development
+- Phase 4: Analysis Features Implementation
+- Phase 5: Integration and Optimization 
