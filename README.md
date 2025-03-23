@@ -1,6 +1,6 @@
 # Parliamentary Meeting Minutes Analysis with GraphRAG
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Ollama](https://img.shields.io/badge/LLM-Ollama-orange.svg)](https://ollama.ai/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-red.svg)](https://streamlit.io/)
@@ -57,7 +57,7 @@ GraphRAG combines the power of knowledge graphs with vector similarity search to
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.10+
 - Conda (for virtual environment management)
 - Ollama (for local LLM support)
 
@@ -67,7 +67,7 @@ This project uses a conda virtual environment. To set up and activate the enviro
 
 ```bash
 # Create the environment
-conda create -n mentor360 python=3.9
+conda create -n mentor360 python=3.10
 
 # Activate the environment
 conda activate mentor360
@@ -106,7 +106,7 @@ Example `config.json`:
 {
   "ollama": {
     "base_url": "http://localhost:11434",
-    "model_name": "llama3",
+    "model_name": "qwq",
     "embedding_dim": 4096
   },
   "vector_store": {
@@ -164,7 +164,7 @@ Then open your browser to the URL displayed in the console (typically http://loc
 If you encounter errors related to the Ollama service:
 
 1. Ensure Ollama is installed and running
-2. Check that you have pulled the required model (`ollama pull llama3`)
+2. Check that you have pulled the required model (`ollama pull qwq`)
 3. The application will attempt to initialize the Ollama service automatically if not provided
 
 ### Embedding Dimensions
