@@ -19,6 +19,7 @@ from datetime import datetime
 import plotly.express as px
 from io import BytesIO
 from typing import List, Dict, Any
+import logging
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -33,6 +34,14 @@ from src.models.graphrag import GraphRAG
 from src.services.ollama import OllamaService
 from src.storage.vector_db import VectorStore, QDRANT_AVAILABLE, CHROMA_AVAILABLE
 from src.utils.graph_visualization import create_plotly_graph, export_community_data
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Initialize config manager
+config_manager.load_config()
 
 # Set page configuration
 st.set_page_config(
@@ -646,9 +655,7 @@ def check_vector_db_availability():
     if CHROMA_AVAILABLE:
         messages.append(("✅ ChromaDB is available", "success"))
     else:
-        messages.append(("❌ ChromaDB is not available", "warning"))
-    
-    messages.append(("✅ SimpleVectorStore fallback is always available", "success"))
+        messages.append(("❌ ChromaDB is not available - functionality may be limited", "warning"))
     
     return messages
 

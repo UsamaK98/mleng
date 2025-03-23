@@ -63,8 +63,6 @@ class GraphRAG:
                 logger.info("Using Qdrant for vector storage")
             elif hasattr(self.vector_store, 'using_chroma') and self.vector_store.using_chroma:
                 logger.info("Using ChromaDB for vector storage")
-            elif hasattr(self.vector_store, 'using_simple') and self.vector_store.using_simple:
-                logger.info("Using SimpleVectorStore fallback for vector storage")
             else:
                 logger.warning("Vector store type could not be determined")
         else:

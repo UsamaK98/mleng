@@ -10,7 +10,6 @@ This system provides AI-powered analysis of parliamentary meeting minutes using 
 - Vector embeddings for semantic search
 - GraphRAG query processing combining graph and vector search
 - Interactive web interface with Streamlit
-- Fallback mode with ChromaDB when Qdrant is not available
 
 ## Setup
 
@@ -134,17 +133,21 @@ If you encounter errors with Qdrant:
 
 ### Embedding Dimensions
 
-If you encounter an error about `embedding_dimensions`, ensure your Ollama configuration in `config.json` uses `embedding_dim` instead:
+The system now automatically detects embedding dimensions from the Ollama service. If you encounter embedding dimension issues, you can explicitly set it in your configuration:
 
 ```json
 {
   "ollama": {
     "base_url": "http://localhost:11434",
     "model_name": "llama3",
-    "embedding_dim": 4096
+    "embedding_dim": 768
   }
 }
 ```
+
+Different models may have different embedding dimensions:
+- Most embedding models: 768 dimensions
+- Larger models: 1024 or 1536 dimensions
 
 ### Streamlit Errors
 

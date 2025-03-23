@@ -1,13 +1,14 @@
 """
-Test script for VectorStore functionality with all backends.
+Test script for VectorStore functionality with available backends.
 
 This script tests the basic functionality of the VectorStore class
-with Qdrant, ChromaDB, and the SimpleVectorStore fallback.
+with Qdrant and ChromaDB backends.
 """
 
 import sys
 import logging
 import pandas as pd
+import numpy as np
 from pathlib import Path
 
 # Configure logging
@@ -45,8 +46,15 @@ def test_vector_store_qdrant():
     logger.info("Testing VectorStore with Qdrant backend...")
     
     try:
-        # Initialize Ollama service
+        # Initialize Ollama service with explicit embedding dimension
         ollama_service = OllamaService()
+        
+        # Set embedding dimension based on actual embedding size
+        # This ensures Qdrant is initialized with the correct vector size
+        embedding_test = ollama_service.get_embeddings("test")
+        embedding_dim = len(embedding_test)
+        ollama_service.embedding_dim = embedding_dim
+        logger.info(f"Using embedding dimension: {embedding_dim}")
         
         # Create VectorStore with Qdrant
         vector_store = VectorStore(
@@ -120,106 +128,52 @@ def test_vector_store_chromadb():
         logger.error(f"Error testing ChromaDB: {str(e)}")
         return False
 
-def test_simple_vector_store():
-    """Test VectorStore with SimpleVectorStore fallback."""
-    logger.info("Testing VectorStore with SimpleVectorStore fallback...")
-    
-    # Force both Qdrant and ChromaDB to be unavailable
-    original_qdrant_available = QDRANT_AVAILABLE
-    original_chroma_available = CHROMA_AVAILABLE
-    
-    # Monkey patch the availability flags
-    import src.storage.vector_db
-    src.storage.vector_db.QDRANT_AVAILABLE = False
-    src.storage.vector_db.CHROMA_AVAILABLE = False
-    
-    try:
-        # Initialize Ollama service
-        ollama_service = OllamaService()
-        
-        # Create VectorStore (should use SimpleVectorStore)
-        vector_store = VectorStore(
-            collection_name="test_simple",
-            ollama_service=ollama_service
-        )
-        
-        # Verify we're using the simple store
-        if not hasattr(vector_store, 'using_simple') or not vector_store.using_simple:
-            logger.error("Not using SimpleVectorStore as expected")
-            return False
-        
-        # Test data
-        test_df = create_test_data()
-        
-        # Store data
-        success = vector_store.store_parliamentary_data(test_df)
-        if not success:
-            logger.error("Failed to store data in SimpleVectorStore")
-            return False
-        
-        # Test search
-        query = "education budget"
-        results = vector_store.search_similar(query, top_k=2)
-        
-        logger.info(f"Search results for '{query}':")
-        for i, result in enumerate(results):
-            logger.info(f"Result {i+1}: {result['payload'].get('Content', '')}... (Score: {result['score']:.4f})")
-        
-        return True
-    
-    except Exception as e:
-        logger.error(f"Error testing SimpleVectorStore: {str(e)}")
+def test_fallback_behavior():
+    """Test fallback behavior from Qdrant to ChromaDB."""
+    if not CHROMA_AVAILABLE:
+        logger.warning("ChromaDB is not available, skipping fallback test.")
         return False
     
-    finally:
-        # Restore original availability flags
-        src.storage.vector_db.QDRANT_AVAILABLE = original_qdrant_available
-        src.storage.vector_db.CHROMA_AVAILABLE = original_chroma_available
-
-def test_fallback_behavior():
-    """Test automatic fallback behavior."""
-    logger.info("Testing fallback behavior...")
+    logger.info("Testing fallback behavior from Qdrant to ChromaDB...")
     
     try:
         # Initialize Ollama service
         ollama_service = OllamaService()
         
-        # Create VectorStore with invalid Qdrant parameters to force fallback
+        # Save original Qdrant configuration
+        original_config = None
+        
         if QDRANT_AVAILABLE:
-            # Save original configuration
-            original_host = config_manager.config.qdrant.host
-            original_port = config_manager.config.qdrant.port
+            # Store the original config
+            if hasattr(config_manager.config, 'qdrant'):
+                original_config = {
+                    'host': config_manager.config.qdrant.host,
+                    'port': config_manager.config.qdrant.port
+                }
             
-            # Temporarily modify configuration to force fallback
-            config_manager.config.qdrant.host = "invalid_host"
+            # Set invalid host and port to force failure
+            config_manager.config.qdrant.host = "invalid_host_that_does_not_exist"
             config_manager.config.qdrant.port = 9999
         
-        # This should fall back to ChromaDB or SimpleVectorStore
+        # This should fail to connect to Qdrant and fall back to ChromaDB
         vector_store = VectorStore(
             collection_name="test_fallback",
             ollama_service=ollama_service,
-            use_qdrant=True  # This should fail and trigger fallback
+            use_qdrant=True  # This should fail and fall back to ChromaDB
         )
         
         # Restore original configuration if needed
-        if QDRANT_AVAILABLE:
-            config_manager.config.qdrant.host = original_host
-            config_manager.config.qdrant.port = original_port
+        if original_config:
+            config_manager.config.qdrant.host = original_config['host']
+            config_manager.config.qdrant.port = original_config['port']
         
-        # Verify we're using a fallback
-        if vector_store.using_qdrant:
-            logger.error("Fallback did not occur as expected")
-            return False
-        
-        if vector_store.using_chroma:
+        # Verify we're using ChromaDB
+        if not vector_store.using_qdrant and vector_store.using_chroma:
             logger.info("Successfully fell back to ChromaDB")
-        elif vector_store.using_simple:
-            logger.info("Successfully fell back to SimpleVectorStore")
+            return True
         else:
-            logger.error("Unknown fallback state")
+            logger.error("Fallback to ChromaDB did not occur as expected")
             return False
-        
-        return True
     
     except Exception as e:
         logger.error(f"Error testing fallback behavior: {str(e)}")
@@ -235,9 +189,6 @@ def main():
     # Test with ChromaDB
     chroma_success = test_vector_store_chromadb()
     
-    # Test with SimpleVectorStore
-    simple_success = test_simple_vector_store()
-    
     # Test fallback behavior
     fallback_success = test_fallback_behavior()
     
@@ -245,12 +196,11 @@ def main():
     logger.info("\nTest Summary:")
     logger.info(f"Qdrant Test: {'Success' if qdrant_success else 'Failed or Skipped'}")
     logger.info(f"ChromaDB Test: {'Success' if chroma_success else 'Failed or Skipped'}")
-    logger.info(f"SimpleVectorStore Test: {'Success' if simple_success else 'Failed or Skipped'}")
     logger.info(f"Fallback Test: {'Success' if fallback_success else 'Failed or Skipped'}")
     
     # Overall success
-    if any([qdrant_success, chroma_success, simple_success]) and fallback_success:
-        logger.info("VectorStore implementation is working correctly with at least one backend!")
+    if (qdrant_success or chroma_success) and fallback_success:
+        logger.info("VectorStore implementation is working correctly!")
         return True
     else:
         logger.warning("Some tests failed, check logs for details.")
