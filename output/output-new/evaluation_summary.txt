@@ -1,0 +1,134 @@
+PARLIAMENTARY MEETING ANALYZER - EVALUATION REPORT
+============================================================
+Date: 2025-03-24 00:15:22
+
+TEST DATA INFORMATION
+------------------------------------------------------------
+Number of test samples: 20
+Number of test queries: 8
+Number of entity types: 5
+
+NAMED ENTITY RECOGNITION EVALUATION
+------------------------------------------------------------
+Overall Metrics:
+  Precision: 0.2157
+  Recall: 0.3056
+  F1 Score: 0.2529
+  True Positives: 11
+  False Positives: 40
+  False Negatives: 25
+
+Metrics by Entity Type:
+  date:
+    Precision: 0.0000
+    Recall: 0.0000
+    F1 Score: 0.0000
+
+  legislation:
+    Precision: 0.3333
+    Recall: 1.0000
+    F1 Score: 0.5000
+
+  person:
+    Precision: 0.2000
+    Recall: 0.0952
+    F1 Score: 0.1290
+
+  event:
+    Precision: 0.0000
+    Recall: 0.0000
+    F1 Score: 0.0000
+
+  topic:
+    Precision: 0.1111
+    Recall: 0.2500
+    F1 Score: 0.1538
+
+  organization:
+    Precision: 0.3000
+    Recall: 0.8571
+    F1 Score: 0.4444
+
+  location:
+    Precision: 0.1429
+    Recall: 0.3333
+    F1 Score: 0.2000
+
+
+RETRIEVAL EVALUATION
+------------------------------------------------------------
+Overall Metrics:
+  At k=1:
+    Precision@1: 0.0000
+    Recall@1: 0.0000
+    F1@1: 0.0000
+  At k=3:
+    Precision@3: 0.0000
+    Recall@3: 0.0000
+    F1@3: 0.0000
+  At k=5:
+    Precision@5: 0.0000
+    Recall@5: 0.0000
+    F1@5: 0.0000
+  At k=10:
+    Precision@10: 0.0000
+    Recall@10: 0.0000
+    F1@10: 0.0000
+
+Metrics by Query Type:
+  entity-based:
+    At k=1:
+      Precision@1: 0.0000
+      Recall@1: 0.0000
+      F1@1: 0.0000
+    At k=3:
+      Precision@3: 0.0000
+      Recall@3: 0.0000
+      F1@3: 0.0000
+    At k=5:
+      Precision@5: 0.0000
+      Recall@5: 0.0000
+      F1@5: 0.0000
+    At k=10:
+      Precision@10: 0.0000
+      Recall@10: 0.0000
+      F1@10: 0.0000
+
+  topic-based:
+    At k=1:
+      Precision@1: 0.0000
+      Recall@1: 0.0000
+      F1@1: 0.0000
+    At k=3:
+      Precision@3: 0.0000
+      Recall@3: 0.0000
+      F1@3: 0.0000
+    At k=5:
+      Precision@5: 0.0000
+      Recall@5: 0.0000
+      F1@5: 0.0000
+    At k=10:
+      Precision@10: 0.0000
+      Recall@10: 0.0000
+      F1@10: 0.0000
+
+  free-text:
+    At k=1:
+      Precision@1: 0.0000
+      Recall@1: 0.0000
+      F1@1: 0.0000
+    At k=3:
+      Precision@3: 0.0000
+      Recall@3: 0.0000
+      F1@3: 0.0000
+    At k=5:
+      Precision@5: 0.0000
+      Recall@5: 0.0000
+      F1@5: 0.0000
+    At k=10:
+      Precision@10: 0.0000
+      Recall@10: 0.0000
+      F1@10: 0.0000
+
+
+END OF REPORT

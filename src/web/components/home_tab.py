@@ -62,7 +62,88 @@ def render_home_tab(data_loader=None, entity_extractor=None, vector_store=None):
     # Dataset statistics
     st.markdown("## Dataset Overview")
     
-    if data_loader and hasattr(data_loader, 'df') and data_loader.df is not None:
+    # Check for data in session state first, then fall back to data_loader
+    if hasattr(st.session_state, 'current_session_data') and st.session_state.current_session_data is not None:
+        df = st.session_state.current_session_data
+        
+        # Create metrics row
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Documents", len(df))
+        
+        with col2:
+            num_speakers = df['Speaker'].nunique() if 'Speaker' in df.columns else 0
+            st.metric("Speakers", num_speakers)
+        
+        with col3:
+            if 'Date' in df.columns:
+                dates = pd.to_datetime(df['Date']).dt.date.nunique()
+                st.metric("Meeting Dates", dates)
+            else:
+                st.metric("Meeting Dates", 0)
+        
+        with col4:
+            if entity_extractor:
+                # Get entity counts from cache if possible
+                entity_count = 0
+                cache_status = cache_manager.get_cache_status()
+                if cache_status["ner_cache"]["exists"]:
+                    entity_count = cache_status["ner_cache"].get("entity_count", 0)
+                
+                if entity_count == 0 and hasattr(entity_extractor, 'extract_entities_from_dataframe'):
+                    # Count entities from data if cache doesn't have the count
+                    try:
+                        _, entity_map = entity_extractor.extract_entities_from_dataframe(df, use_cache=True)
+                        entity_count = sum(len(entities) for entities in entity_map.values())
+                    except Exception as e:
+                        logger.error(f"Error counting entities: {str(e)}")
+                
+                st.metric("Extracted Entities", entity_count)
+            else:
+                st.metric("Extracted Entities", 0)
+        
+        # Show speaker distribution
+        if 'Speaker' in df.columns:
+            st.subheader("Speaker Distribution")
+            
+            speaker_counts = df['Speaker'].value_counts().reset_index()
+            speaker_counts.columns = ['Speaker', 'Count']
+            
+            # Limit to top 10 speakers for display
+            top_speakers = speaker_counts.head(10)
+            
+            fig = px.bar(
+                top_speakers, 
+                x='Speaker', 
+                y='Count',
+                title='Top 10 Speakers by Number of Contributions',
+                color='Count',
+                color_continuous_scale='Viridis'
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Show date distribution if available
+        if 'Date' in df.columns:
+            st.subheader("Timeline of Meetings")
+            
+            df['Date'] = pd.to_datetime(df['Date'])
+            date_counts = df.groupby(df['Date'].dt.date).size().reset_index()
+            date_counts.columns = ['Date', 'Count']
+            
+            fig = px.line(
+                date_counts, 
+                x='Date', 
+                y='Count',
+                title='Number of Contributions Over Time',
+                markers=True
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+    
+    elif data_loader and hasattr(data_loader, 'df') and data_loader.df is not None:
+        # Fallback to data_loader if session state doesn't have data
         df = data_loader.df
         
         # Create metrics row

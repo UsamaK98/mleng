@@ -16,6 +16,11 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for Streamlit compatibility
+import io
+import base64
+import os
+from datetime import datetime
+import csv
 
 from src.utils.logging import logger
 from src.utils.config import config_manager
@@ -50,6 +55,103 @@ def render_statistics_tab(data_loader=None, entity_extractor=None, knowledge_gra
     
     with entity_tab:
         render_entity_cooccurrence(df, entity_extractor, knowledge_graph)
+
+def export_as_csv(data, filename="export.csv"):
+    """Convert dataframe to CSV download link.
+    
+    Args:
+        data: DataFrame to export
+        filename: Name of the file to download
+        
+    Returns:
+        HTML link for downloading CSV
+    """
+    csv = data.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()
+    href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">Download CSV</a>'
+    return href
+
+def export_plotly_as_png(fig):
+    """Convert Plotly figure to PNG download link.
+    
+    Args:
+        fig: Plotly figure to export
+        
+    Returns:
+        HTML link for downloading PNG
+    """
+    buffer = io.BytesIO()
+    fig.write_image(buffer, format="png")
+    buffer.seek(0)
+    img_str = base64.b64encode(buffer.read()).decode()
+    href = f'<a href="data:image/png;base64,{img_str}" download="chart_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png">Download Chart</a>'
+    return href
+
+def export_matplotlib_as_png(fig):
+    """Convert Matplotlib figure to PNG download link.
+    
+    Args:
+        fig: Matplotlib figure to export
+        
+    Returns:
+        HTML link for downloading PNG
+    """
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format="png", bbox_inches="tight")
+    buffer.seek(0)
+    img_str = base64.b64encode(buffer.read()).decode()
+    href = f'<a href="data:image/png;base64,{img_str}" download="wordcloud_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png">Download Chart</a>'
+    return href
+
+def generate_summary_report(data, entity_counts=None, speaker_counts=None, topic_counts=None):
+    """Generate a text summary report of analysis.
+    
+    Args:
+        data: DataFrame containing parliamentary data
+        entity_counts: Entity counts by type
+        speaker_counts: Speaker contributions count
+        topic_counts: Topic frequency data
+        
+    Returns:
+        String with summary report content
+    """
+    report = ["PARLIAMENTARY MEETING ANALYZER - STATISTICAL SUMMARY", "=" * 60, ""]
+    
+    # Date range
+    if 'Date' in data.columns:
+        min_date = data['Date'].min()
+        max_date = data['Date'].max()
+        report.append(f"Period: {min_date} to {max_date}")
+    
+    # Document counts
+    report.append(f"Total documents: {len(data)}")
+    
+    # Speaker stats
+    if 'Speaker' in data.columns:
+        unique_speakers = data['Speaker'].nunique()
+        report.append(f"Total speakers: {unique_speakers}")
+        
+        if speaker_counts is not None:
+            report.append("\nTOP SPEAKERS BY CONTRIBUTION COUNT:")
+            report.append("-" * 40)
+            for i, (speaker, count) in enumerate(speaker_counts.head(10).iterrows()):
+                report.append(f"{i+1}. {speaker}: {count['Count']} contributions")
+    
+    # Entity stats
+    if entity_counts is not None:
+        report.append("\nENTITY TYPE DISTRIBUTION:")
+        report.append("-" * 40)
+        for entity_type, count in entity_counts.items():
+            report.append(f"{entity_type}: {count}")
+    
+    # Topic stats
+    if topic_counts is not None:
+        report.append("\nTOP TOPICS BY FREQUENCY:")
+        report.append("-" * 40)
+        for i, (topic, freq) in enumerate(topic_counts.head(10).iteritems()):
+            report.append(f"{i+1}. {topic}: mentioned {freq} times")
+    
+    return "\n".join(report)
 
 def render_speaker_statistics(df, entity_extractor):
     """Render speaker statistics analysis.
@@ -123,6 +225,13 @@ def render_speaker_statistics(df, entity_extractor):
             fig1.update_layout(xaxis_tickangle=-45)
             st.plotly_chart(fig1, use_container_width=True)
             
+            # Add export button
+            export_col1, export_col2 = st.columns(2)
+            with export_col1:
+                st.markdown(export_as_csv(top_speakers, "top_speakers.csv"), unsafe_allow_html=True)
+            with export_col2:
+                st.markdown(export_plotly_as_png(fig1), unsafe_allow_html=True)
+            
             # Create bar chart for content length (as proxy for speaking time)
             fig2 = px.bar(
                 top_speakers,
@@ -134,6 +243,9 @@ def render_speaker_statistics(df, entity_extractor):
             )
             fig2.update_layout(xaxis_tickangle=-45)
             st.plotly_chart(fig2, use_container_width=True)
+            
+            # Add export button for second chart
+            st.markdown(export_plotly_as_png(fig2), unsafe_allow_html=True)
             
             # Show time trend if date column exists
             if 'Date' in filtered_df.columns:
@@ -165,8 +277,34 @@ def render_speaker_statistics(df, entity_extractor):
                         title='Speaker Activity Over Time'
                     )
                     st.plotly_chart(fig3, use_container_width=True)
+                    
+                    # Add export buttons
+                    export_col1, export_col2 = st.columns(2)
+                    with export_col1:
+                        st.markdown(export_as_csv(selected_data, "speaker_activity.csv"), unsafe_allow_html=True)
+                    with export_col2:
+                        st.markdown(export_plotly_as_png(fig3), unsafe_allow_html=True)
         else:
             st.error("Required columns (Speaker, Content) not found in data.")
+            
+        # Generate summary report
+        if 'Speaker' in filtered_df.columns:
+            st.subheader("Speaker Analysis Summary Report")
+            with st.expander("View and Download Summary"):
+                speaker_count_df = filtered_df['Speaker'].value_counts().reset_index()
+                speaker_count_df.columns = ['Speaker', 'Count']
+                
+                report_text = generate_summary_report(
+                    filtered_df,
+                    speaker_counts=speaker_count_df
+                )
+                
+                st.text_area("Summary Report", report_text, height=300)
+                
+                # Download text report
+                b64 = base64.b64encode(report_text.encode()).decode()
+                href = f'<a href="data:text/plain;base64,{b64}" download="speaker_analysis_report.txt">Download Report</a>'
+                st.markdown(href, unsafe_allow_html=True)
     
     except Exception as e:
         logger.error(f"Error in speaker statistics: {str(e)}")
@@ -230,6 +368,13 @@ def render_topic_analysis(df, entity_extractor):
                     fig1.update_layout(xaxis_tickangle=-45)
                     st.plotly_chart(fig1, use_container_width=True)
                     
+                    # Add export buttons
+                    export_col1, export_col2 = st.columns(2)
+                    with export_col1:
+                        st.markdown(export_as_csv(top_topics, "top_topics.csv"), unsafe_allow_html=True)
+                    with export_col2:
+                        st.markdown(export_plotly_as_png(fig1), unsafe_allow_html=True)
+                    
                     # Generate word cloud from topics
                     st.subheader("Topic Word Cloud")
                     
@@ -252,6 +397,9 @@ def render_topic_analysis(df, entity_extractor):
                             ax.imshow(wordcloud, interpolation='bilinear')
                             ax.axis('off')
                             st.pyplot(fig)
+                            
+                            # Add export button for word cloud
+                            st.markdown(export_matplotlib_as_png(fig), unsafe_allow_html=True)
                         except Exception as e:
                             st.error(f"Error generating word cloud: {str(e)}")
                     
@@ -302,6 +450,28 @@ def render_topic_analysis(df, entity_extractor):
                                 )
                                 fig2.update_layout(xaxis_tickangle=-45)
                                 st.plotly_chart(fig2, use_container_width=True)
+                                
+                                # Add export buttons
+                                export_col1, export_col2 = st.columns(2)
+                                with export_col1:
+                                    st.markdown(export_as_csv(combined_data, "speaker_topics.csv"), unsafe_allow_html=True)
+                                with export_col2:
+                                    st.markdown(export_plotly_as_png(fig2), unsafe_allow_html=True)
+                    
+                    # Generate summary report
+                    st.subheader("Topic Analysis Summary Report")
+                    with st.expander("View and Download Summary"):
+                        report_text = generate_summary_report(
+                            df,
+                            topic_counts=topic_counts.set_index('Topic')['Frequency']
+                        )
+                        
+                        st.text_area("Summary Report", report_text, height=300)
+                        
+                        # Download text report
+                        b64 = base64.b64encode(report_text.encode()).decode()
+                        href = f'<a href="data:text/plain;base64,{b64}" download="topic_analysis_report.txt">Download Report</a>'
+                        st.markdown(href, unsafe_allow_html=True)
                 else:
                     st.warning("No topic entities found in the data. Try adjusting entity extraction settings.")
         else:
@@ -333,6 +503,13 @@ def render_topic_analysis(df, entity_extractor):
                 )
                 fig.update_layout(xaxis_tickangle=-45)
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # Add export buttons
+                export_col1, export_col2 = st.columns(2)
+                with export_col1:
+                    st.markdown(export_as_csv(word_df.head(30), "word_frequency.csv"), unsafe_allow_html=True)
+                with export_col2:
+                    st.markdown(export_plotly_as_png(fig), unsafe_allow_html=True)
     
     except Exception as e:
         logger.error(f"Error in topic analysis: {str(e)}")
@@ -434,6 +611,53 @@ def render_entity_cooccurrence(df, entity_extractor, knowledge_graph):
                             )
                             
                             st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Add export buttons
+                            export_col1, export_col2 = st.columns(2)
+                            with export_col1:
+                                st.markdown(export_as_csv(co_matrix.reset_index(), "entity_cooccurrence.csv"), unsafe_allow_html=True)
+                            with export_col2:
+                                st.markdown(export_plotly_as_png(fig), unsafe_allow_html=True)
+                            
+                            # Generate summary report
+                            st.subheader("Entity Co-occurrence Summary Report")
+                            with st.expander("View and Download Summary"):
+                                # Count entities by type
+                                entity_type_counts = filtered_entities['label'].value_counts().to_dict()
+                                
+                                # Generate report
+                                report_text = generate_summary_report(
+                                    df,
+                                    entity_counts=entity_type_counts
+                                )
+                                
+                                # Add co-occurrence info
+                                report_text += "\n\nTOP ENTITY CO-OCCURRENCES:\n"
+                                report_text += "-" * 40 + "\n"
+                                
+                                # Get top co-occurrences
+                                co_data = []
+                                for i in range(len(co_matrix.index)):
+                                    for j in range(i+1, len(co_matrix.columns)):
+                                        entity1 = co_matrix.index[i]
+                                        entity2 = co_matrix.columns[j]
+                                        count = co_matrix.iloc[i, j]
+                                        if count > 0:
+                                            co_data.append((entity1, entity2, count))
+                                
+                                # Sort by count
+                                co_data.sort(key=lambda x: x[2], reverse=True)
+                                
+                                # Add top 20 to report
+                                for i, (entity1, entity2, count) in enumerate(co_data[:20]):
+                                    report_text += f"{i+1}. {entity1} & {entity2}: {count} co-occurrences\n"
+                                
+                                st.text_area("Summary Report", report_text, height=300)
+                                
+                                # Download text report
+                                b64 = base64.b64encode(report_text.encode()).decode()
+                                href = f'<a href="data:text/plain;base64,{b64}" download="entity_cooccurrence_report.txt">Download Report</a>'
+                                st.markdown(href, unsafe_allow_html=True)
                         else:
                             st.info("No significant co-occurrences found between the selected entities.")
                         
@@ -453,6 +677,9 @@ def render_entity_cooccurrence(df, entity_extractor, knowledge_graph):
                                 
                                 fig = create_plotly_graph(filtered_graph)
                                 st.plotly_chart(fig, use_container_width=True)
+                                
+                                # Add export button for network visualization
+                                st.markdown(export_plotly_as_png(fig), unsafe_allow_html=True)
                             else:
                                 st.info("No relevant relationships found in the knowledge graph for the selected entity types.")
                     else:

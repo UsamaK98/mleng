@@ -1,0 +1,526 @@
+{
+  "ner_evaluation": {
+    "precision": {
+      "date": 0.0,
+      "legislation": 0.3333333333333333,
+      "person": 0.2,
+      "event": 0.0,
+      "topic": 0.1111111111111111,
+      "organization": 0.3,
+      "location": 0.14285714285714285
+    },
+    "recall": {
+      "date": 0,
+      "legislation": 1.0,
+      "person": 0.09523809523809523,
+      "event": 0,
+      "topic": 0.25,
+      "organization": 0.8571428571428571,
+      "location": 0.3333333333333333
+    },
+    "f1": {
+      "date": 0,
+      "legislation": 0.5,
+      "person": 0.12903225806451613,
+      "event": 0,
+      "topic": 0.15384615384615383,
+      "organization": 0.4444444444444444,
+      "location": 0.2
+    },
+    "entity_counts": {
+      "date": {
+        "true_positives": 0,
+        "false_positives": 1,
+        "false_negatives": 0
+      },
+      "legislation": {
+        "true_positives": 1,
+        "false_positives": 2,
+        "false_negatives": 0
+      },
+      "person": {
+        "true_positives": 2,
+        "false_positives": 8,
+        "false_negatives": 19
+      },
+      "event": {
+        "true_positives": 0,
+        "false_positives": 1,
+        "false_negatives": 0
+      },
+      "topic": {
+        "true_positives": 1,
+        "false_positives": 8,
+        "false_negatives": 3
+      },
+      "organization": {
+        "true_positives": 6,
+        "false_positives": 14,
+        "false_negatives": 1
+      },
+      "location": {
+        "true_positives": 1,
+        "false_positives": 6,
+        "false_negatives": 2
+      }
+    },
+    "confusion_matrix": {},
+    "overall": {
+      "precision": 0.21568627450980393,
+      "recall": 0.3055555555555556,
+      "f1": 0.25287356321839083,
+      "true_positives": 11,
+      "false_positives": 40,
+      "false_negatives": 25
+    }
+  },
+  "retrieval_evaluation": {
+    "precision_at_k": {
+      "1": 0.0,
+      "3": 0.0,
+      "5": 0.0,
+      "10": 0.0
+    },
+    "recall_at_k": {
+      "1": 0.0,
+      "3": 0.0,
+      "5": 0.0,
+      "10": 0.0
+    },
+    "f1_at_k": {
+      "1": 0.0,
+      "3": 0.0,
+      "5": 0.0,
+      "10": 0.0
+    },
+    "query_results": {
+      "q1": {
+        "query_text": "What did the Minister of Education discuss?",
+        "query_type": "entity-based",
+        "retrieved_ids": [],
+        "relevant_ids": [
+          "1",
+          "14"
+        ],
+        "metrics": {
+          "1": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "3": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "5": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "10": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          }
+        }
+      },
+      "q2": {
+        "query_text": "Information about healthcare funding in London",
+        "query_type": "topic-based",
+        "retrieved_ids": [],
+        "relevant_ids": [
+          "2",
+          "15"
+        ],
+        "metrics": {
+          "1": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "3": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "5": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "10": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          }
+        }
+      },
+      "q3": {
+        "query_text": "Climate change discussions",
+        "query_type": "topic-based",
+        "retrieved_ids": [],
+        "relevant_ids": [
+          "3",
+          "16"
+        ],
+        "metrics": {
+          "1": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "3": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "5": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "10": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          }
+        }
+      },
+      "q4": {
+        "query_text": "Who is General Thompson?",
+        "query_type": "entity-based",
+        "retrieved_ids": [],
+        "relevant_ids": [
+          "5"
+        ],
+        "metrics": {
+          "1": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          },
+          "3": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          },
+          "5": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          },
+          "10": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          }
+        }
+      },
+      "q5": {
+        "query_text": "Trade agreements with European countries",
+        "query_type": "free-text",
+        "retrieved_ids": [],
+        "relevant_ids": [
+          "4",
+          "11"
+        ],
+        "metrics": {
+          "1": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "3": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "5": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          },
+          "10": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 2
+          }
+        }
+      },
+      "q6": {
+        "query_text": "What departments were mentioned in the discussions?",
+        "query_type": "entity-based",
+        "retrieved_ids": [],
+        "relevant_ids": [
+          "1",
+          "5",
+          "10",
+          "12",
+          "13",
+          "19"
+        ],
+        "metrics": {
+          "1": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 6
+          },
+          "3": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 6
+          },
+          "5": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 6
+          },
+          "10": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 6
+          }
+        }
+      },
+      "q7": {
+        "query_text": "Infrastructure projects in the UK",
+        "query_type": "topic-based",
+        "retrieved_ids": [],
+        "relevant_ids": [
+          "13"
+        ],
+        "metrics": {
+          "1": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          },
+          "3": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          },
+          "5": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          },
+          "10": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          }
+        }
+      },
+      "q8": {
+        "query_text": "Legal reforms proposed by ministers",
+        "query_type": "free-text",
+        "retrieved_ids": [],
+        "relevant_ids": [
+          "20"
+        ],
+        "metrics": {
+          "1": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          },
+          "3": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          },
+          "5": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          },
+          "10": {
+            "precision": 0,
+            "recall": 0.0,
+            "f1": 0,
+            "relevant_retrieved": 0,
+            "retrieved": 0,
+            "total_relevant": 1
+          }
+        }
+      }
+    },
+    "results_by_type": {
+      "entity-based": {
+        "queries": [
+          "q1",
+          "q4",
+          "q6"
+        ],
+        "precision_by_k": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        },
+        "recall_by_k": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        },
+        "f1_by_k": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        }
+      },
+      "topic-based": {
+        "queries": [
+          "q2",
+          "q3",
+          "q7"
+        ],
+        "precision_by_k": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        },
+        "recall_by_k": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        },
+        "f1_by_k": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        }
+      },
+      "free-text": {
+        "queries": [
+          "q5",
+          "q8"
+        ],
+        "precision_by_k": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        },
+        "recall_by_k": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        },
+        "f1_by_k": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0,
+          "10": 0.0
+        }
+      }
+    }
+  },
+  "test_data_info": {
+    "num_samples": 20,
+    "num_queries": 8,
+    "num_entity_types": 5
+  },
+  "timestamp": "2025-03-24 00:15:22"
+}

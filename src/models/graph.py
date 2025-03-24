@@ -796,6 +796,49 @@ class KnowledgeGraph:
             'num_communities': len(self.community_to_nodes) if self.community_to_nodes else 0,
             'density': nx.density(self.graph)
         }
+    
+    def get_filtered_graph(self, node_types=None, max_nodes=50):
+        """Get a filtered subgraph based on node types.
+        
+        Args:
+            node_types: List of node types to include. If None, includes all types.
+            max_nodes: Maximum number of nodes to include.
+            
+        Returns:
+            NetworkX subgraph containing only the specified node types.
+        """
+        if not self.graph:
+            logger.warning("No graph data available for filtering")
+            return nx.DiGraph()  # Return empty graph
+        
+        if not node_types:
+            # If no types specified, return a limited view of the whole graph
+            all_nodes = list(self.graph.nodes())
+            if len(all_nodes) > max_nodes:
+                # Take a sample of nodes to limit the size
+                nodes_subset = all_nodes[:max_nodes]
+            else:
+                nodes_subset = all_nodes
+            
+            return self.graph.subgraph(nodes_subset)
+        
+        # Filter nodes by type
+        filtered_nodes = []
+        
+        for node, attrs in self.graph.nodes(data=True):
+            node_type = attrs.get('type')
+            if node_type in node_types:
+                filtered_nodes.append(node)
+        
+        # If too many nodes, limit to the most connected ones
+        if len(filtered_nodes) > max_nodes:
+            # Sort by degree (number of connections)
+            node_degrees = {node: self.graph.degree(node) for node in filtered_nodes}
+            sorted_nodes = sorted(node_degrees.items(), key=lambda x: x[1], reverse=True)
+            filtered_nodes = [node for node, _ in sorted_nodes[:max_nodes]]
+        
+        # Create subgraph
+        return self.graph.subgraph(filtered_nodes)
 
 # Usage example:
 # from src.models.graph import KnowledgeGraph
