@@ -588,8 +588,16 @@ class VectorStore:
                 # Check if query embedding dimension matches the expected dimension
                 if len(query_embedding[0]) != self.embedding_dim:
                     logger.warning(f"Query embedding dimension mismatch: got {len(query_embedding[0])}, expected {self.embedding_dim}")
-                    logger.warning(f"Will not attempt to pad or truncate embeddings as per requirements")
-                    return []
+                    # Normalize dimensions to match expected
+                    emb = query_embedding[0]
+                    if len(emb) < self.embedding_dim:
+                        # Pad with zeros if too short
+                        logger.info(f"Padding query embedding from {len(emb)} to {self.embedding_dim} dimensions")
+                        query_embedding[0] = emb + [0.0] * (self.embedding_dim - len(emb))
+                    else:
+                        # Truncate if too long
+                        logger.info(f"Truncating query embedding from {len(emb)} to {self.embedding_dim} dimensions")
+                        query_embedding[0] = emb[:self.embedding_dim]
                 
                 # Convert filter_dict to Qdrant filter
                 filter_obj = None

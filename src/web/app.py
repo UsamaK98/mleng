@@ -37,6 +37,7 @@ from src.utils.cache_manager import cache_manager
 from src.web.components.home_tab import render_home_tab
 from src.web.components.entity_list_tab import render_entity_list_tab
 from src.web.components.speaker_query_tab import render_speaker_query_tab
+from src.web.components.statistics_tab import render_statistics_tab
 
 # Set page configuration
 st.set_page_config(
@@ -668,12 +669,13 @@ def main():
     settings = render_sidebar()
     
     # Main content tabs
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "Home", 
         "Entity List", 
         "Speaker Query", 
         "GraphRAG Query", 
-        "Knowledge Graph"
+        "Knowledge Graph",
+        "Statistics"
     ])
     
     with tab1:
@@ -710,6 +712,14 @@ def main():
     with tab5:
         # Knowledge Graph tab (existing)
         render_graph_section()
+        
+    with tab6:
+        # Statistics tab (new)
+        render_statistics_tab(
+            data_loader=st.session_state.data_loader,
+            entity_extractor=st.session_state.entity_extractor,
+            knowledge_graph=st.session_state.knowledge_graph
+        )
 
 if __name__ == "__main__":
     main() 

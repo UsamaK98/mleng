@@ -146,6 +146,11 @@ class OllamaService:
         
         start_time = time.time()
         
+        # First check if we need to test the embedding model dimension
+        expected_dim = self.embedding_dim
+        actual_dim = None
+        dim_checked = False
+        
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i+batch_size]
             batch_embeddings = []
@@ -170,21 +175,38 @@ class OllamaService:
                         result = response.json()
                         embedding = result.get("embedding", [])
                         
+                        # Check embedding dimension on first successful result if not checked yet
+                        if embedding and not dim_checked:
+                            actual_dim = len(embedding)
+                            if actual_dim != expected_dim:
+                                logger.warning(f"Embedding dimension mismatch: expected {expected_dim}, got {actual_dim}. Using expected dimension of {expected_dim}.")
+                            dim_checked = True
+                        
                         if embedding:
+                            # Ensure embedding has correct dimension
+                            if len(embedding) != expected_dim:
+                                logger.warning(f"Embedding dimension mismatch: got {len(embedding)}, expected {expected_dim}")
+                                # Normalize to expected dimension
+                                if len(embedding) < expected_dim:
+                                    # Pad with zeros if too short
+                                    embedding = embedding + [0.0] * (expected_dim - len(embedding))
+                                else:
+                                    # Truncate if too long
+                                    embedding = embedding[:expected_dim]
                             batch_embeddings.append(embedding)
                         else:
                             logger.error(f"Empty embedding returned for text: {text[:100]}...")
                             # Append zero vector as fallback
-                            batch_embeddings.append([0.0] * self.embedding_dim)
+                            batch_embeddings.append([0.0] * expected_dim)
                     else:
                         logger.error(f"Error getting embedding: {response.status_code} - {response.text}")
                         # Append zero vector as fallback
-                        batch_embeddings.append([0.0] * self.embedding_dim)
+                        batch_embeddings.append([0.0] * expected_dim)
                 
                 except Exception as e:
                     logger.error(f"Exception in get_embeddings: {str(e)}")
                     # Append zero vector as fallback
-                    batch_embeddings.append([0.0] * self.embedding_dim)
+                    batch_embeddings.append([0.0] * expected_dim)
             
             embeddings.extend(batch_embeddings)
             

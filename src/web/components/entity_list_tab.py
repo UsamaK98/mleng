@@ -175,10 +175,6 @@ def render_entity_list_tab(data_loader=None, entity_extractor=None, knowledge_gr
                                 # Display as table with count
                                 st.dataframe(
                                     unique_entities,
-                                    column_config={
-                                        "Entity": st.column_config.TextColumn("Entity"),
-                                        "Count": st.column_config.NumberColumn("Occurrences")
-                                    },
                                     use_container_width=True
                                 )
                                 
