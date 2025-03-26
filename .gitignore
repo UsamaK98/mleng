@@ -75,4 +75,6 @@ processed_data/
 
 # Original project files
 /development_plan.md
-/implementation_plan.md
+implementation_plan.md
+**/implementation_plan.md
+/*/implementation_plan.md
