@@ -1,15 +1,12 @@
 # Parliamentary Meeting Minutes Analysis with GraphRAG
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Ollama](https://img.shields.io/badge/LLM-Ollama-orange.svg)](https://ollama.ai/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-red.svg)](https://streamlit.io/)
 
 This system provides AI-powered analysis of parliamentary meeting minutes using a combination of knowledge graph and vector storage technologies (GraphRAG).
 
-<p align="center">
-  <img src="assets/graphrag_logo.png" alt="GraphRAG Logo" width="250" height="250">
-</p>
 
 ## 📋 Table of Contents
 
@@ -57,7 +54,7 @@ GraphRAG combines the power of knowledge graphs with vector similarity search to
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.10+
 - Conda (for virtual environment management)
 - Ollama (for local LLM support)
 
@@ -67,7 +64,7 @@ This project uses a conda virtual environment. To set up and activate the enviro
 
 ```bash
 # Create the environment
-conda create -n mentor360 python=3.9
+conda create -n mentor360 python=3.10
 
 # Activate the environment
 conda activate mentor360
@@ -81,7 +78,7 @@ pip install -r requirements.txt
 1. Install Ollama by following the instructions at [https://ollama.ai/](https://ollama.ai/)
 2. Pull the required model:
    ```bash
-   ollama pull llama3
+   ollama pull qwq
    ```
 3. Ensure the Ollama service is running before starting the application:
    ```bash
@@ -106,7 +103,7 @@ Example `config.json`:
 {
   "ollama": {
     "base_url": "http://localhost:11434",
-    "model_name": "llama3",
+    "model_name": "qwq",
     "embedding_dim": 4096
   },
   "vector_store": {
@@ -164,7 +161,7 @@ Then open your browser to the URL displayed in the console (typically http://loc
 If you encounter errors related to the Ollama service:
 
 1. Ensure Ollama is installed and running
-2. Check that you have pulled the required model (`ollama pull llama3`)
+2. Check that you have pulled the required model (`ollama pull qwq`)
 3. The application will attempt to initialize the Ollama service automatically if not provided
 
 ### Embedding Dimensions
@@ -175,7 +172,7 @@ If you encounter an error about `embedding_dimensions`, ensure your Ollama confi
 {
   "ollama": {
     "base_url": "http://localhost:11434",
-    "model_name": "llama3",
+    "model_name": "qwq",
     "embedding_dim": 4096
   }
 }
@@ -187,7 +184,7 @@ If you encounter errors with the Streamlit application:
 
 1. Ensure you have the correct version of Streamlit installed (specified in requirements.txt)
 2. Try clearing the Streamlit cache: `streamlit cache clear`
-3. Check your Python version (3.9 recommended)
+3. Check your Python version (3.10 recommended)
 
 ## 📊 Data Requirements
 
