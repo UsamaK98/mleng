@@ -1,6 +1,6 @@
 # Parliamentary Meeting Minutes Analysis with GraphRAG
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Ollama](https://img.shields.io/badge/LLM-Ollama-orange.svg)](https://ollama.ai/)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-red.svg)](https://streamlit.io/)
@@ -25,11 +25,21 @@ This system provides AI-powered analysis of parliamentary meeting minutes using 
   - [🚀 Running the Application](#-running-the-application)
     - [Demo Script](#demo-script)
     - [Web Application](#web-application)
+  - [🐳 Docker Deployment](#-docker-deployment)
+    - [Docker Prerequisites](#docker-prerequisites)
+    - [Building and Running with Docker](#building-and-running-with-docker)
+    - [Using Docker Compose](#using-docker-compose)
+    - [Environment Variables](#environment-variables)
+  - [📊 Evaluation Metrics](#-evaluation-metrics)
+    - [NER Evaluation](#ner-evaluation)
+    - [Retrieval Evaluation](#retrieval-evaluation)
+    - [Running Evaluations](#running-evaluations)
   - [📁 Project Structure](#-project-structure)
   - [❓ Troubleshooting](#-troubleshooting)
     - [Ollama Service Issues](#ollama-service-issues)
     - [Embedding Dimensions](#embedding-dimensions)
     - [Streamlit Errors](#streamlit-errors)
+    - [Docker Issues](#docker-issues)
   - [📊 Data Requirements](#-data-requirements)
   - [🤝 Contributing](#-contributing)
   - [📄 License](#-license)
@@ -57,7 +67,7 @@ GraphRAG combines the power of knowledge graphs with vector similarity search to
 
 ### Prerequisites
 
-- Python 3.9+
+- Python 3.10+
 - Conda (for virtual environment management)
 - Ollama (for local LLM support)
 
@@ -67,7 +77,7 @@ This project uses a conda virtual environment. To set up and activate the enviro
 
 ```bash
 # Create the environment
-conda create -n mentor360 python=3.9
+conda create -n mentor360 python=3.10
 
 # Activate the environment
 conda activate mentor360
@@ -144,6 +154,88 @@ streamlit run src/web/app.py
 
 Then open your browser to the URL displayed in the console (typically http://localhost:8501).
 
+## 🐳 Docker Deployment
+
+### Docker Prerequisites
+
+- Docker installed on your system
+- Docker Compose (optional, for easier deployment)
+
+### Building and Running with Docker
+
+You can build and run the application using Docker:
+
+```bash
+# Build the Docker image
+docker build -t parliamentary-analyzer .
+
+# Run the container
+docker run -p 8501:8501 parliamentary-analyzer
+```
+
+Note: The Docker configuration assumes Ollama is also running in a container. For standalone Ollama, see the configuration section below.
+
+### Using Docker Compose
+
+For a complete setup including Ollama, use Docker Compose:
+
+```bash
+# Start all services
+docker-compose up
+
+# Run in detached mode
+docker-compose up -d
+
+# Stop all services
+docker-compose down
+```
+
+The application will be available at http://localhost:8501.
+
+### Environment Variables
+
+The Docker configuration supports these environment variables:
+
+- `OLLAMA_HOST`: Hostname for Ollama service (default: `ollama`)
+- `OLLAMA_PORT`: Port for Ollama service (default: `11434`)
+
+For a custom Ollama instance, run with:
+
+```bash
+docker run -p 8501:8501 -e OLLAMA_HOST=your-ollama-host -e OLLAMA_PORT=11434 parliamentary-analyzer
+```
+
+## 📊 Evaluation Metrics
+
+The project includes comprehensive evaluation metrics for both Named Entity Recognition (NER) and retrieval components.
+
+### NER Evaluation
+
+- **Precision, Recall, F1**: Calculated for each entity type and overall
+- **Entity Counts**: True positives, false positives, and false negatives
+- **Exact Match Accuracy**: Percentage of exactly matched entities
+
+### Retrieval Evaluation
+
+- **Precision@k, Recall@k, F1@k**: Performance at different result set sizes
+- **Mean Reciprocal Rank (MRR)**: Measures where the first relevant document appears
+- **Normalized Discounted Cumulative Gain (NDCG)**: Evaluates ranking quality
+- **Latency Metrics**: Response time measurements for different retrieval modes
+
+### Running Evaluations
+
+To run the evaluation script:
+
+```bash
+# Activate environment
+conda activate mentor360
+
+# Run evaluation
+python src/evaluation/run_evaluation.py
+```
+
+Evaluation results are saved to the `output-new` directory.
+
 ## 📁 Project Structure
 
 - `src/data/`: Data loading and preprocessing
@@ -153,6 +245,7 @@ Then open your browser to the URL displayed in the console (typically http://loc
 - `src/utils/`: Utility functions for logging, configuration, etc.
 - `src/web/`: Streamlit web application
 - `src/demo/`: Demo scripts
+- `src/evaluation/`: Evaluation metrics and scripts
 - `tests/`: Unit and integration tests
 - `data/`: Sample and processed data files
 - `config/`: Configuration files
@@ -187,7 +280,16 @@ If you encounter errors with the Streamlit application:
 
 1. Ensure you have the correct version of Streamlit installed (specified in requirements.txt)
 2. Try clearing the Streamlit cache: `streamlit cache clear`
-3. Check your Python version (3.9 recommended)
+3. Check your Python version (3.10 recommended)
+
+### Docker Issues
+
+If you encounter issues with the Docker deployment:
+
+1. Ensure both the app and Ollama containers are running: `docker-compose ps`
+2. Check container logs: `docker-compose logs app` or `docker-compose logs ollama`
+3. Verify that Ollama can be accessed from the app container using the configured host/port
+4. For volume mounting issues, check permissions on host directories
 
 ## 📊 Data Requirements
 

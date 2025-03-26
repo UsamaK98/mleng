@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Dict, List, Any, Tuple, Optional, Set
-from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix, accuracy_score, classification_report
 
 from src.utils.logging import logger
 from src.utils.config import config_manager
@@ -91,7 +91,9 @@ class Evaluator:
             "recall": {},
             "f1": {},
             "entity_counts": {},
-            "confusion_matrix": {}
+            "confusion_matrix": {},
+            "entity_level_metrics": {},
+            "token_level_metrics": {}
         }
         
         try:
@@ -165,6 +167,28 @@ class Evaluator:
                 "false_negatives": overall_fn
             }
             
+            # Add entity-level exact match metrics
+            exact_match_correct = 0
+            exact_match_total = 0
+            
+            for entry_id, gt_entities in ground_truth_entities.items():
+                if entry_id in extracted_entities:
+                    # Convert entities to a comparable format
+                    gt_entity_set = {(e["text"].lower(), e["label"]) for e in gt_entities}
+                    extracted_entity_set = {(e["text"].lower(), e["label"]) for e in extracted_entities[entry_id]}
+                    
+                    # Count exact matches
+                    exact_match_correct += len(gt_entity_set.intersection(extracted_entity_set))
+                    exact_match_total += len(gt_entity_set)
+            
+            exact_match_accuracy = exact_match_correct / exact_match_total if exact_match_total > 0 else 0
+            
+            results["entity_level_metrics"] = {
+                "exact_match_accuracy": exact_match_accuracy,
+                "exact_match_correct": exact_match_correct,
+                "exact_match_total": exact_match_total
+            }
+            
             return results
             
         except Exception as e:
@@ -191,6 +215,8 @@ class Evaluator:
             "precision_at_k": {},
             "recall_at_k": {},
             "f1_at_k": {},
+            "mrr": 0.0,
+            "ndcg": {},
             "query_results": {}
         }
         
@@ -198,125 +224,172 @@ class Evaluator:
         k_values = [1, 3, 5, 10]
         
         try:
-            query_results = {}
+            # Track metrics for all queries
+            all_precisions = {k: [] for k in k_values}
+            all_recalls = {k: [] for k in k_values}
+            all_f1s = {k: [] for k in k_values}
+            all_ndcg = {k: [] for k in k_values}
+            reciprocal_ranks = []
             
-            # Run each query and evaluate
-            for query_info in test_queries:
-                query_id = query_info["query_id"]
-                query_text = query_info["query_text"]
-                query_type = query_info.get("query_type", "free-text")  # Can be entity-based, topic-based, or free-text
+            # For each query
+            for query in test_queries:
+                query_id = query["query_id"]
+                query_text = query["query_text"]
+                query_mode = query.get("query_mode", "hybrid")
                 
-                # Run query in appropriate mode
-                mode = "hybrid"  # Default mode
-                if query_type == "entity-based":
-                    mode = "graph"
-                elif query_type == "topic-based":
-                    mode = "hybrid"
+                # Get ground truth for this query
+                if query_id not in ground_truth_ids:
+                    logger.warning(f"No ground truth found for query ID {query_id}")
+                    continue
+                    
+                relevant_ids = ground_truth_ids[query_id]
                 
-                # Get results
-                result = self.graphrag.query(
-                    query_text,
-                    mode=mode,
-                    max_results=max(k_values),
-                    include_sources=True
+                # Get retrieved results
+                retrieved_documents = self.graphrag.retrieve(
+                    query=query_text,
+                    mode=query_mode,
+                    top_k=max(k_values)
                 )
                 
-                # Extract retrieved document IDs
-                retrieved_ids = []
-                for source in result.get("sources", []):
-                    if "entry_id" in source:
-                        retrieved_ids.append(source["entry_id"])
-                    elif "id" in source:
-                        retrieved_ids.append(source["id"])
+                # Extract IDs from retrieved documents
+                retrieved_ids = [doc["id"] for doc in retrieved_documents]
                 
-                # Calculate metrics at each k
-                relevant_ids = ground_truth_ids.get(query_id, [])
-                
-                query_metrics = {}
-                for k in k_values:
-                    retrieved_at_k = retrieved_ids[:k]
-                    
-                    # Calculate precision and recall
-                    rel_ret = len(set(retrieved_at_k).intersection(set(relevant_ids)))
-                    precision = rel_ret / len(retrieved_at_k) if retrieved_at_k else 0
-                    recall = rel_ret / len(relevant_ids) if relevant_ids else 0
-                    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-                    
-                    query_metrics[k] = {
-                        "precision": precision,
-                        "recall": recall,
-                        "f1": f1,
-                        "relevant_retrieved": rel_ret,
-                        "retrieved": len(retrieved_at_k),
-                        "total_relevant": len(relevant_ids)
-                    }
-                
-                # Store query result
-                query_results[query_id] = {
+                # Calculate metrics
+                query_results = {
+                    "query_id": query_id,
                     "query_text": query_text,
-                    "query_type": query_type,
-                    "retrieved_ids": retrieved_ids,
+                    "query_mode": query_mode,
                     "relevant_ids": relevant_ids,
-                    "metrics": query_metrics
+                    "retrieved_ids": retrieved_ids,
+                    "precision_at_k": {},
+                    "recall_at_k": {},
+                    "f1_at_k": {},
+                    "ndcg_at_k": {}
                 }
-            
-            # Calculate aggregate metrics
+                
+                # Calculate precision@k, recall@k, and F1@k
+                for k in k_values:
+                    if k > len(retrieved_ids):
+                        continue
+                        
+                    retrieved_at_k = retrieved_ids[:k]
+                    relevant_and_retrieved = set(retrieved_at_k).intersection(set(relevant_ids))
+                    
+                    # Precision@k
+                    precision_at_k = len(relevant_and_retrieved) / k if k > 0 else 0
+                    all_precisions[k].append(precision_at_k)
+                    query_results["precision_at_k"][k] = precision_at_k
+                    
+                    # Recall@k
+                    recall_at_k = len(relevant_and_retrieved) / len(relevant_ids) if relevant_ids else 0
+                    all_recalls[k].append(recall_at_k)
+                    query_results["recall_at_k"][k] = recall_at_k
+                    
+                    # F1@k
+                    f1_at_k = 2 * (precision_at_k * recall_at_k) / (precision_at_k + recall_at_k) if (precision_at_k + recall_at_k) > 0 else 0
+                    all_f1s[k].append(f1_at_k)
+                    query_results["f1_at_k"][k] = f1_at_k
+                    
+                    # NDCG@k
+                    dcg = 0
+                    idcg = 0
+                    
+                    # Calculating DCG - using binary relevance (0/1)
+                    for i in range(min(k, len(retrieved_ids))):
+                        if retrieved_ids[i] in relevant_ids:
+                            # Position is 0-indexed, so add 1 for the formula
+                            dcg += 1.0 / np.log2(i + 2)
+                    
+                    # Calculating IDCG
+                    for i in range(min(k, len(relevant_ids))):
+                        idcg += 1.0 / np.log2(i + 2)
+                    
+                    ndcg_at_k = dcg / idcg if idcg > 0 else 0
+                    all_ndcg[k].append(ndcg_at_k)
+                    query_results["ndcg_at_k"][k] = ndcg_at_k
+                
+                # Calculate Mean Reciprocal Rank (MRR)
+                reciprocal_rank = 0
+                for i, doc_id in enumerate(retrieved_ids):
+                    if doc_id in relevant_ids:
+                        # Position is 0-indexed, so add 1 for the formula
+                        reciprocal_rank = 1.0 / (i + 1)
+                        break
+                        
+                reciprocal_ranks.append(reciprocal_rank)
+                query_results["reciprocal_rank"] = reciprocal_rank
+                
+                # Store query results
+                results["query_results"][query_id] = query_results
+                
+            # Calculate average metrics across all queries
             for k in k_values:
-                precision_sum = 0
-                recall_sum = 0
-                f1_sum = 0
-                
-                for query_id, result in query_results.items():
-                    precision_sum += result["metrics"][k]["precision"]
-                    recall_sum += result["metrics"][k]["recall"]
-                    f1_sum += result["metrics"][k]["f1"]
-                
-                # Average metrics
-                num_queries = len(query_results)
-                results["precision_at_k"][k] = precision_sum / num_queries if num_queries > 0 else 0
-                results["recall_at_k"][k] = recall_sum / num_queries if num_queries > 0 else 0
-                results["f1_at_k"][k] = f1_sum / num_queries if num_queries > 0 else 0
+                results["precision_at_k"][k] = np.mean(all_precisions[k]) if all_precisions[k] else 0
+                results["recall_at_k"][k] = np.mean(all_recalls[k]) if all_recalls[k] else 0
+                results["f1_at_k"][k] = np.mean(all_f1s[k]) if all_f1s[k] else 0
+                results["ndcg"][k] = np.mean(all_ndcg[k]) if all_ndcg[k] else 0
             
-            # Group results by query type
-            results_by_type = {}
-            for query_info in test_queries:
-                query_id = query_info["query_id"]
-                query_type = query_info.get("query_type", "free-text")
-                
-                if query_type not in results_by_type:
-                    results_by_type[query_type] = {
-                        "queries": [],
-                        "precision_by_k": {k: 0 for k in k_values},
-                        "recall_by_k": {k: 0 for k in k_values},
-                        "f1_by_k": {k: 0 for k in k_values}
-                    }
-                
-                results_by_type[query_type]["queries"].append(query_id)
-                
-                # Add metrics for this query
-                for k in k_values:
-                    results_by_type[query_type]["precision_by_k"][k] += query_results[query_id]["metrics"][k]["precision"]
-                    results_by_type[query_type]["recall_by_k"][k] += query_results[query_id]["metrics"][k]["recall"]
-                    results_by_type[query_type]["f1_by_k"][k] += query_results[query_id]["metrics"][k]["f1"]
+            # Calculate Mean Reciprocal Rank
+            results["mrr"] = np.mean(reciprocal_ranks) if reciprocal_ranks else 0
             
-            # Average by query type
-            for query_type, type_results in results_by_type.items():
-                num_queries = len(type_results["queries"])
-                
-                for k in k_values:
-                    type_results["precision_by_k"][k] /= num_queries if num_queries > 0 else 1
-                    type_results["recall_by_k"][k] /= num_queries if num_queries > 0 else 1
-                    type_results["f1_by_k"][k] /= num_queries if num_queries > 0 else 1
-            
-            # Store final results
-            results["query_results"] = query_results
-            results["results_by_type"] = results_by_type
+            # Add latency metrics
+            latency_results = self._measure_retrieval_latency(test_queries[:min(5, len(test_queries))])
+            results["latency"] = latency_results
             
             return results
             
         except Exception as e:
             logger.error(f"Error evaluating retrieval: {str(e)}")
             return {"error": str(e)}
+    
+    def _measure_retrieval_latency(self, test_queries: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Measure retrieval latency for a subset of queries.
+        
+        Args:
+            test_queries: List of test queries
+            
+        Returns:
+            Dictionary containing latency metrics
+        """
+        if not self.graphrag:
+            return {"error": "GraphRAG not initialized"}
+        
+        latency_results = {
+            "graph_mode": [],
+            "vector_mode": [],
+            "hybrid_mode": []
+        }
+        
+        for query in test_queries:
+            query_text = query["query_text"]
+            
+            # Measure graph mode latency
+            start_time = time.time()
+            self.graphrag.retrieve(query=query_text, mode="graph", top_k=5)
+            graph_latency = time.time() - start_time
+            latency_results["graph_mode"].append(graph_latency)
+            
+            # Measure vector mode latency
+            start_time = time.time()
+            self.graphrag.retrieve(query=query_text, mode="vector", top_k=5)
+            vector_latency = time.time() - start_time
+            latency_results["vector_mode"].append(vector_latency)
+            
+            # Measure hybrid mode latency
+            start_time = time.time()
+            self.graphrag.retrieve(query=query_text, mode="hybrid", top_k=5)
+            hybrid_latency = time.time() - start_time
+            latency_results["hybrid_mode"].append(hybrid_latency)
+        
+        # Calculate average and percentile metrics
+        for mode in latency_results:
+            if latency_results[mode]:
+                latency_results[f"{mode}_avg"] = np.mean(latency_results[mode])
+                latency_results[f"{mode}_p50"] = np.percentile(latency_results[mode], 50)
+                latency_results[f"{mode}_p90"] = np.percentile(latency_results[mode], 90)
+                latency_results[f"{mode}_p95"] = np.percentile(latency_results[mode], 95)
+        
+        return latency_results
     
     def run_evaluation(self, test_data_path: str = None):
         """Run the full evaluation pipeline and save results.
